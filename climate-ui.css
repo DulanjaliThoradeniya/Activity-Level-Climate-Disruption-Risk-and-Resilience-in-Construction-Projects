@@ -1,0 +1,107 @@
+.mode-tabs{grid-template-columns:1fr}
+.continuity-controls[hidden]{display:none}
+.climate-forecast-dialog{width:min(1200px,96vw);max-width:96vw;max-height:92vh;height:min(900px,92vh);padding:20px;display:flex;flex-direction:column;gap:10px}
+.climate-forecast-dialog:not([open]){display:none}
+.climate-forecast-dialog .dialog-head{flex:none}
+.climate-forecast-station,.climate-forecast-status,.climate-forecast-help{margin:0;color:#66756c;font-size:12px;line-height:1.5}
+.climate-forecast-controls{display:flex;align-items:end;gap:10px;flex:none}
+.climate-forecast-controls label{display:grid;gap:5px;color:#526059;font-size:11px;font-weight:700}
+.climate-forecast-controls select,.climate-forecast-controls button{min-height:36px;padding:7px 10px;border:1px solid #cbd8ce;border-radius:8px;background:#fff;font:inherit;color:#24382f}
+.climate-forecast-controls button{background:#285f46;color:#fff;border-color:#285f46;font-weight:700;cursor:pointer}
+.climate-forecast-controls button:disabled{opacity:.65;cursor:wait}
+.climate-forecast-status{padding:18px;border-radius:10px;background:#f3f7f3}
+.climate-forecast-help{padding:16px;border:1px solid #dbe6dd;border-radius:10px;background:#f7faf7}
+.climate-forecast-help ol{padding-left:22px}
+.climate-forecast-help li{margin:5px 0}
+.climate-forecast-help code{display:block;overflow-wrap:anywhere;padding:8px;background:#edf2ee;border-radius:6px;color:#263d30}
+.climate-forecast-help a{color:#28765d}
+#climateForecastFrame{width:100%;height:100%;min-height:0;flex:1;border:1px solid #e0e5df;border-radius:10px;background:#fff}
+#climateForecastFrame[hidden]{display:none}
+@media(max-width:700px){.climate-forecast-dialog{width:100vw;max-width:100vw;height:95vh;max-height:95vh;padding:14px;border-radius:12px}.climate-forecast-station{font-size:10px}.climate-forecast-controls{align-items:stretch;flex-direction:column}.climate-forecast-controls select,.climate-forecast-controls button{width:100%}}
+
+body{background:#f4f7f5}
+.topbar{justify-content:flex-start;height:68px}
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:0;font-size:22px;line-height:1.05}
+.brand em{margin:3px 0 0;font:500 10px var(--mono);letter-spacing:1.5px;color:#718078}
+.header-actions{display:none}
+.dashboard{grid-template-columns:minmax(285px,320px) minmax(0,1fr) minmax(290px,330px);height:calc(100vh - 78px);min-height:560px;max-height:none;gap:12px;padding:12px}
+.dashboard>.panel{border:1px solid #dfe7e1;border-radius:12px;box-shadow:0 3px 14px #2845320a}
+.controls-panel,.results-panel{padding:18px}
+.controls-panel>.panel-head .eyebrow{font-size:9px;letter-spacing:1.2px}
+.controls-panel>.panel-head h1{font-size:19px}
+.controls-panel .project-summary{order:0;margin:12px 0;padding:0 0 13px;background:none;border-bottom:1px solid #e8eee9}
+.project-summary>.input-section-title{display:none}
+.input-section-title{margin:14px 0 8px!important;font-size:13px!important;font-weight:700!important;color:#2c4c3a;letter-spacing:0!important}
+.project-summary .input-section-title{margin-top:0!important}
+.project-summary>strong{font-size:15px;color:#1d3428}
+.project-summary>span{font-size:11px;color:#617066}
+.project-summary #calculatedCompletion{color:#285f46}
+.project-summary button{justify-self:start;padding:6px 9px;border:1px solid #d8e4db;border-radius:7px;background:#fff;color:#38674e;font-size:10px}
+.location-field{margin:12px 0 3px}
+.location-field select,.storeys-field select{margin-top:5px;width:100%;height:36px;border:1px solid #dce6df;border-radius:7px;background:#fff;padding:0 9px}
+.climate-section-heading{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.climate-section-heading .input-section-title{margin:0 0 7px!important}
+#currentTab{padding:6px 10px;border:1px solid #d6e4da;border-radius:7px;background:#f3f8f4;color:#2b684a;font-size:10px;font-weight:700;cursor:pointer}
+.weather-card{padding:9px 10px;border-radius:8px}
+.weather-card p{font-size:10px}
+.weather-source{display:none}
+.storeys-field{margin:0 0 4px;font-size:11px;color:#65736a}
+.activity-catalogue{gap:5px;margin:0}
+.catalogue-stage{display:grid;grid-template-columns:35px 1fr;gap:2px;padding:8px 9px;border:1px solid #e6ece7;border-radius:8px;background:#fff}
+.catalogue-stage>span{display:contents}
+.catalogue-stage>span b{grid-row:1 / span 2;align-self:center;font:700 10px var(--mono)}
+.catalogue-stage strong{font-size:11px}
+.catalogue-stage small{grid-column:2;font-size:9px}
+.scenario-duration{margin:12px 0}
+.scenario-duration>span{display:flex;justify-content:space-between;color:#516258;font-size:10px;font-weight:700}
+.scenario-duration input{width:100%;accent-color:#347452}
+#runBtn{margin-top:2px;text-align:center;font-size:12px}
+.controls-panel .fineprint{display:none!important}
+.map-panel{display:flex;flex-direction:column;min-height:0}
+.map-heading{padding:18px 20px 10px}
+.map-heading .eyebrow{font-size:9px}
+.map-heading h2{font-size:18px}
+.map-tools .live{font-size:9px}
+.gantt-simple-legend{display:flex;gap:16px;align-items:center;padding:10px 20px;border-top:1px solid #edf1ed;color:#637168;font-size:10px}
+.gantt-simple-legend span{display:flex;align-items:center;gap:6px}
+.planned-swatch,.actual-swatch{display:inline-block;width:16px;height:7px;border-radius:4px}
+.planned-swatch{background:#54866a}
+.actual-swatch{background:#d8894e}
+.gantt-canvas{flex:1;min-height:280px;margin:0 12px 12px;border:1px solid #edf1ed;border-radius:8px;background:#fff;background-image:none}
+.gantt-chart svg{font-family:var(--sans)}
+.gantt-empty,.impact-empty{padding:16px;color:#718078;font-size:12px;line-height:1.5}
+.results-panel>.panel-head h2{font-size:16px}
+.results-panel>.panel-head .eyebrow{font-size:9px;letter-spacing:1.1px}
+.schedule-results{margin:8px 0 15px}
+.impact-period{margin:4px 0 9px;color:#6b7a70;font-size:10px}
+.impacted-activity-list{display:grid;gap:7px;max-height:38vh;overflow:auto;margin:0;padding:0;list-style:none}
+.impact-activity{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;padding:9px;border:1px solid #e5ece6;border-radius:8px;background:#fff}
+.impact-activity>div{display:grid;gap:4px;min-width:0}
+.impact-activity>div strong{font-size:10px;line-height:1.4;color:#344a3b}
+.impact-activity>div small{font-size:9px;color:#758279}
+.impact-delay{align-self:center;color:#8c5626;font-size:10px;font-weight:700;white-space:nowrap}
+.impact-risk{grid-column:2;justify-self:end;padding:3px 7px;border-radius:99px;font-size:9px;font-weight:700}
+.risk-high{background:#fdebe7;color:#a64232}
+.risk-moderate{background:#fff4df;color:#946b21}
+.risk-low{background:#edf6ef;color:#39734b}
+.impact-band-note{margin:8px 0;color:#7b867f;font-size:9px;line-height:1.4}
+.completion-result{display:flex;justify-content:space-between;gap:8px;padding:10px;border-radius:8px;background:#eff6f0;color:#50675a;font-size:10px}
+.completion-result strong{color:#285f46}
+.response-heading{padding-top:11px;border-top:1px solid #e9eee9}
+.response-heading .stage-intro{margin:5px 0 0;font-size:10px;line-height:1.4;color:#758279}
+.stage-response{margin-top:4px}
+.stage-response>.intervention-head{display:none}
+.stage-actions{display:grid;gap:5px}
+.stage-card{border:1px solid #e7ede8;border-radius:8px;background:#fff}
+.stage-card summary{display:flex;align-items:center;gap:7px;padding:8px;cursor:pointer;list-style:none}
+.stage-card summary::-webkit-details-marker{display:none}
+.stage-card summary .stage-step{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#eef5ef;color:#39714d;font:10px var(--mono)}
+.stage-card summary strong{font-size:10px;color:#344a3b}
+.stage-card summary small{margin-left:auto;color:#7c887f;font-size:8px}
+.stage-card ul{margin:0;padding:0 12px 9px 37px}
+.stage-card li{margin:4px 0;color:#66756c;font-size:9px;line-height:1.4}
+.risk-card,.risk-method-note,.risk-matrix-details,.impact-summary,.high-impact-block,.result-note{display:none!important}
+.dashboard>.panel .schedule-toolbar{display:none!important}
+footer{display:none}
+@media(max-width:1050px){.dashboard{grid-template-columns:minmax(260px,34%) minmax(0,1fr);height:auto;overflow:visible}.results-panel{grid-column:1/-1}.dashboard>.panel{max-height:none}.map-panel{min-height:60vh}}
+@media(max-width:700px){.dashboard{display:flex;flex-direction:column;padding:8px}.dashboard>.panel{max-height:none}.controls-panel{order:1}.map-panel{order:2;min-height:55vh}.results-panel{order:3}.impacted-activity-list{max-height:none}.gantt-canvas{min-height:320px}.gantt-simple-legend{flex-wrap:wrap}}

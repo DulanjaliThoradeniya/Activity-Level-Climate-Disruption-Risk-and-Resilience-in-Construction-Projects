@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const {calculate,parseCSV}=require('./schedule-engine.js');
+const cal={weekdays:[1,2,3,4,5],holidays:new Set(['2026-11-11'])};
+const activity=(id,durationDays,predecessors='',exposure='outdoor',rainSensitivity='high')=>({id,name:id,stage:'test',durationDays,predecessors,exposure,heatSensitivity:'high',rainSensitivity});
+const run=(items,scenario=null)=>calculate(items,'2026-11-09',cal,scenario);
+let r=run([activity('A',2),activity('B',3,'A')]);
+assert.equal(r.base.A.start,'2026-11-09');assert.equal(r.base.A.finish,'2026-11-10');assert.equal(r.base.B.start,'2026-11-12');assert.equal(r.finishProject,'2026-11-16');assert.equal(r.base.B.float,0);assert.equal(r.base.A.float,0);
+r=run([activity('A',2),activity('B',4),activity('C',2,'A,B')]);assert.equal(r.base.C.start,'2026-11-16');
+r=run([activity('A',3),activity('B',2),{...activity('C',2),dependencies:[{predecessorId:'A',type:'FS',lag:1},{predecessorId:'B',type:'SS',lag:2}]}]);assert.equal(r.base.C.start,'2026-11-16');assert.equal(r.dependencies.get('C').length,2);
+r=run([activity('A',2),{...activity('B',2),dependencies:[{predecessorId:'A',type:'FF',lag:0}]}]);assert.equal(r.base.B.start,'2026-11-09');assert.equal(r.base.B.finish,r.base.A.finish);
+r=run([activity('A',3),{...activity('B',2),dependencies:[{predecessorId:'A',type:'FS',lag:-1}]}]);assert.equal(r.base.B.start,'2026-11-12');
+r=run([activity('A',2),{...activity('B',2),dependencies:[{predecessorId:'A',type:'SF',lag:2}]}]);assert.equal(r.base.B.start,'2026-11-10');
+assert.throws(()=>run([activity('A',1),{...activity('B',1),dependencies:[{predecessorId:'A',type:'FS',lag:0},{predecessorId:'A',type:'SS',lag:1}]}]),/duplicate dependency/i);
+assert.throws(()=>run([activity('A',1),{...activity('B',1),dependencies:[{predecessorId:'A',type:'FS',lag:0.5}]}]),/whole number/i);
+r=run([activity('A',3),activity('B',2)]);assert.equal(r.order.length,2);assert.equal(r.base.A.start,r.base.B.start);assert.ok(r.base.A.finish>r.base.B.finish);assert.equal(r.base.B.float,1);
+assert.throws(()=>run([activity('A',1,'B'),activity('B',1,'A')]),/cycle/i);
+assert.throws(()=>run([activity('A',1,'missing')]),/missing predecessor/i);
+assert.throws(()=>run([activity('A',1),activity('A',2)]),/duplicate/i);assert.throws(()=>run([activity('A',1,'A')]),/itself/i);assert.throws(()=>calculate([activity('A',1)],'2026-11-09',{weekdays:[],holidays:new Set()}),/working weekday/i);
+assert.deepEqual(parseCSV('id,name\nA1,"Pour, cure"\n'),[['id','name'],['A1','Pour, cure']]);assert.throws(()=>parseCSV('id,name\nA1,"unfinished'),/unclosed/i);
+r=run([activity('A',4)],{start:'2026-12-01',end:'2026-12-04',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.A.finish,r.base.A.finish);
+r=run([activity('A',2)],{start:'2026-11-10',end:'2026-11-10',factor:1,hazard:'rain',recovery:0});assert.equal(r.adj.A.finish,r.base.A.finish);assert.equal(r.adj.A.loss,0);
+r=run([activity('A',4)],{start:'2026-11-10',end:'2026-11-10',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.A.finish,'2026-11-16');assert.equal(r.adj.A.loss,1);
+r=run([activity('A',2),activity('B',4,'','indoor'),activity('C',1,'A'),activity('D',1,'B','indoor')],{start:'2026-11-10',end:'2026-11-10',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.C.finish,'2026-11-13');assert.equal(r.adjustedFinish,r.finishProject);assert.ok(r.adj.C.inherited);
+r=run([activity('A',2),activity('B',2,'A')],{start:'2026-11-12',end:'2026-11-12',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.B.direct,true);assert.ok(r.adjustedFinish>r.finishProject); // successor is reassessed on its revised event-window date
+console.log('PASS: calendar chain, parallel branches, multiple predecessors, FS/SS/FF/SF relationships, lag/lead, weekend/holiday, dependency validation, scenario behavior, and float.');

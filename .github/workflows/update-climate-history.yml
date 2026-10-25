@@ -1,0 +1,39 @@
+name: Update bundled NEA climate history
+
+on:
+  schedule:
+    - cron: "23 4 5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Download and bundle the latest NEA records
+        run: python update_climate_data.py --refresh-recent
+      - name: Publish the refreshed static data
+        run: |
+          if [ -z "$(git status --porcelain -- data/climate-history.json)" ]; then
+            echo "The bundled climate history is already current."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/climate-history.json
+            git commit -m "Update bundled NEA climate history"
+            git push
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
