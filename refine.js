@@ -36,14 +36,6 @@
 
   ];
 
-  const riskMatrix={1:['Low','Low','Low','Medium','Medium'],2:['Low','Medium','Medium','Medium','Medium'],3:['Low','Medium','Medium','Medium','High'],4:['Medium','Medium','Medium','High','High'],5:['Medium','Medium','High','High','High']};
-
-  const severityText={1:'Negligible - negligible injury',2:'Minor - first-aid injury or temporary discomfort',3:'Moderate - injury or ill-health requiring medical treatment',4:'Major - serious injury, occupational disease or exposure',5:'Catastrophic - fatality, fatal disease or multiple major injuries'};
-
-  const likelihoodText={1:'Rare - not expected, but possible',2:'Remote - not likely under normal circumstances',3:'Occasional - possible or known to occur',4:'Frequent - common occurrence',5:'Almost certain - continual or repeating experience'};
-
-  const seriousTasks=new Set(['site','earth','haul','drain','pump','crane','piling','transport','formwork','precast','safety','demo','isolate','formation','pile','foundation','frame','floorCycle','facadeInstall']);
-
   const outdoorTasks=new Set(['site','earth','haul','drain','pump','crane','piling','transport','formwork','concrete','steel','precast','glass','drywall','demo','isolate','wasteSort','survey','formation','pile','foundation','frame','floorCycle','facadeInstall','mepInstall']);
 
   const wbsId=(phase,code,prefix='activity')=>`${prefix}_${phase}_${code.replaceAll('.','_')}`;
@@ -142,51 +134,119 @@
 
   const wbsDeliverables=new Map(Object.values(workBreakdowns).flatMap(definition=>definition.deliverables.map(item=>[item.id,item])));
 
-  const catalogueTask=(phase,code)=>{
-    const task=workBreakdowns[phase].groups.flatMap(group=>group.tasks).find(item=>item.code===code);
-    if(!task)throw new Error(`Missing catalogue activity ${phase} ${code}`);
-    return task;
-  };
-
-  const catalogueGroup=(phase,code,title,taskCodes)=>({code,title,tasks:taskCodes.map(taskCode=>catalogueTask(phase,taskCode))});
+  const W=(code,label,scope)=>({id:`wbs_${code.toLowerCase().replaceAll('-','_')}`,code,label,flood:scope,scope,links:[]});
 
   const catalogueStages=[
-    {key:'site-preparation',code:'SP',name:'Site Preparation',groups:workBreakdowns.demolition.groups},
-    {key:'earthworks',code:'EW',name:'Earthworks',groups:workBreakdowns.groundprep.groups},
-    {key:'foundation',code:'FD',name:'Foundation',groups:workBreakdowns.substructure.groups},
-    {key:'superstructure',code:'SS',name:'Superstructure',groups:workBreakdowns.superstructure.groups},
-    {key:'mep-installation',code:'MEP',name:'Mechanical, Electrical and Plumbing Installation',groups:[
-      catalogueGroup('envelope','4.1','Building envelope & roof',['4.1.1','4.1.2','4.1.3']),
-      catalogueGroup('envelope','4.2','Envelope closure & weather-tightness',['4.2.2','4.2.3']),
-      catalogueGroup('envelope','4.2','MEP first-fix installation',['4.2.1']),
-      catalogueGroup('fitout','5.2','MEP second-fix installation',['5.2.2'])
-    ]},
-    {key:'finishing-works',code:'FN',name:'Finishing Works',groups:[
-      catalogueGroup('fitout','5.1','Partitions & ceilings',['5.1.1','5.1.2']),
-      catalogueGroup('fitout','5.2','Finishes',['5.2.1']),
-      catalogueGroup('fitout','5.3','Inspection & acceptance',['5.3.1'])
-    ]},
-    {key:'testing-commissioning-handover',code:'TC',name:'Testing, Commissioning and Handover',groups:workBreakdowns.commissioning.groups}
+    {key:'site-preparation',code:'SP',name:'Site preparation',groups:[{code:'SP',title:'Site preparation',tasks:[
+      W('SP-01','Site clearing','Vegetation and obstruction removal'),
+      W('SP-02','Hoarding and perimeter fencing','Site boundary hoarding'),
+      W('SP-03','Temporary drainage and silt control','Earth control measures, sumps'),
+      W('SP-04','Temporary access roads and hardstanding','Haul routes, working platforms'),
+      W('SP-05','Temporary site facilities and utilities','Offices, power, water'),
+      W('SP-06','Survey and setting out','Control points, gridlines')
+    ]}]},
+    {key:'earthworks',code:'EW',name:'Earthwork',groups:[{code:'EW',title:'Earthwork',tasks:[
+      W('EW-01','Bulk excavation','Mass excavation to formation level'),
+      W('EW-02','ERSS installation','Earth retaining and stabilising structures (e.g., sheet piles, soldier piles, diaphragm walls)'),
+      W('EW-03','Dewatering and groundwater control','Pumping, wells'),
+      W('EW-04','Excavated material haulage','Transport and disposal'),
+      W('EW-05','Subgrade preparation and compaction','Trimming, compaction'),
+      W('EW-06','Backfilling and compaction','Fill around substructure')
+    ]}]},
+    {key:'foundation',code:'FD',name:'Foundation',groups:[{code:'FD',title:'Foundation',tasks:[
+      W('FD-01','Piling','Bored, driven or micro piles'),
+      W('FD-02','Pile head trimming and pile cap preparation','Exposure of pile heads'),
+      W('FD-03','Blinding and below-ground waterproofing','Blinding concrete, membranes'),
+      W('FD-04','Foundation formwork','Footings, rafts, pile caps, basement slab and walls'),
+      W('FD-05','Foundation reinforcement fixing','As above'),
+      W('FD-06','Foundation concrete placement and curing','As above'),
+      W('FD-07','Substructure waterproofing and protection','External face waterproofing'),
+      W('FD-08','Foundation inspection and testing','Pile and concrete tests')
+    ]}]},
+    {key:'superstructure',code:'SS',name:'Superstructure',groups:[{code:'SS',title:'Superstructure',tasks:[
+      W('SS-01','Column and wall reinforcement fixing','Vertical elements'),
+      W('SS-02','Column and wall formwork','Vertical elements'),
+      W('SS-03','Slab and beam formwork and falsework','Horizontal elements'),
+      W('SS-04','Slab and beam reinforcement fixing','Includes post-tensioning where used'),
+      W('SS-05','Concrete placement and curing','Vertical and horizontal elements'),
+      W('SS-06','Formwork striking and reshoring',''),
+      W('SS-07','Precast element installation','Lifting, positioning, grouting'),
+      W('SS-08','Structural steel erection','Beams and columns lifting'),
+      W('SS-09','Steel connections','Bolting and welding'),
+      W('SS-10','General material lifting','Crane and hoist movement of materials (excludes lifts counted in SS-07 and SS-08)')
+    ]}]},
+    {key:'temporary-works',code:'TW',name:'Temporary works (cross-cutting)',groups:[{code:'TW',title:'Temporary works (cross-cutting)',tasks:[
+      W('TW-01','Tower crane and hoist erection and dismantling',''),
+      W('TW-02','Scaffolding erection and dismantling','External and access scaffolds'),
+      W('TW-03','Edge protection and safety netting','')
+    ]}]},
+    {key:'building-envelope',code:'BE',name:'Building envelope',groups:[{code:'BE',title:'Building envelope',tasks:[
+      W('BE-01','Roof screed and insulation',''),
+      W('BE-02','Roof waterproofing membrane',''),
+      W('BE-03','Roof covering','Tiles, metal sheets, green roof layers'),
+      W('BE-04','External wall masonry','Brick and block walls'),
+      W('BE-05','External plastering and rendering',''),
+      W('BE-06','Curtain wall and facade installation','Unitised or stick systems'),
+      W('BE-07','Window and external door installation',''),
+      W('BE-08','External wall waterproofing and sealant works',''),
+      W('BE-09','Dry cladding installation','Panels, stone, metal')
+    ]}]},
+    {key:'mep-installation',code:'MEP',name:'MEP installation',groups:[{code:'ME',title:'MEP installation',tasks:[
+      W('ME-01','Electrical conduit and trunking installation',''),
+      W('ME-02','Cabling, wiring and switchgear',''),
+      W('ME-03','Plumbing and sanitary pipework',''),
+      W('ME-04','Fire protection installation','Sprinklers, standpipes'),
+      W('ME-05','HVAC ducting and pipework',''),
+      W('ME-06','HVAC and plant equipment installation','Includes rooftop and outdoor units'),
+      W('ME-07','Lift and escalator installation',''),
+      W('ME-08','Low-voltage and ICT systems','Security, communications'),
+      W('ME-09','Rooftop services installation','Antennas, PV, roof access systems'),
+      W('ME-10','M&E testing and commissioning','')
+    ]}]},
+    {key:'finishing',code:'FN',name:'Finishing',groups:[{code:'FN',title:'Finishing',tasks:[
+      W('FN-01','Internal partition walls','Drywall and block'),
+      W('FN-02','Internal plastering and screeding',''),
+      W('FN-03','Wet area waterproofing','Bathrooms, kitchens'),
+      W('FN-04','Wall and floor tiling','Tile and stone'),
+      W('FN-05','Ceiling installation',''),
+      W('FN-06','Internal painting',''),
+      W('FN-07','Door, joinery and fixtures installation',''),
+      W('FN-08','Flooring','Timber, vinyl, carpet'),
+      W('FN-09','External wall painting and coating',''),
+      W('FN-10','Final cleaning and defects rectification','')
+    ]}]},
+    {key:'external-works',code:'XW',name:'External works',groups:[{code:'XW',title:'External works',tasks:[
+      W('XW-01','Permanent site drainage construction','Drains, outlets'),
+      W('XW-02','Underground utilities installation','Trenching, ducts, pipes'),
+      W('XW-03','Retaining and boundary walls',''),
+      W('XW-04','Paving and road construction',''),
+      W('XW-05','Landscaping','Soil, turf, planting'),
+      W('XW-06','External lighting and fixtures',''),
+      W('XW-07','Site demobilisation','Temporary works removal, final site clean-up')
+    ]}]}
   ];
 
+  catalogueStages.forEach((stage,stageIndex)=>{
+    stage.number=stageIndex+1;
+    stage.groups.forEach(group=>group.tasks.forEach((task,taskIndex)=>{task.subcategoryNumber=`${stage.number}.${taskIndex+1}`}));
+  });
+
   const catalogueTasks=catalogueStages.flatMap(stage=>stage.groups.flatMap(group=>group.tasks));
-  if(catalogueTasks.length!==wbsActivities.size||new Set(catalogueTasks.map(task=>task.id)).size!==wbsActivities.size)throw new Error('Activity catalogue stages must include every WBS activity exactly once.');
+  if(catalogueTasks.length!==69||new Set(catalogueTasks.map(task=>task.id)).size!==catalogueTasks.length)throw new Error('Activity catalogue must contain all 69 WBS activities exactly once.');
 
-  const cataloguePhaseByTask=new Map(Object.entries(workBreakdowns).flatMap(([phase,definition])=>definition.groups.flatMap(group=>group.tasks.map(task=>[task.id,phase]))));
-
-  window.CResistActivityCatalogue=catalogueStages.flatMap(stage=>stage.groups.flatMap(group=>group.tasks.map(task=>({id:task.id,code:task.code,name:task.label,phase:cataloguePhaseByTask.get(task.id),phaseCode:stage.code,phaseName:stage.name,scope:task.flood+' '+task.heat,links:task.links||[]}))));
+  window.CResistActivityCatalogue=catalogueStages.flatMap(stage=>stage.groups.flatMap(group=>group.tasks.map(task=>({id:task.id,code:task.code,name:task.label,phaseCode:stage.code,phaseName:stage.name,stageNumber:stage.number,subcategoryNumber:task.subcategoryNumber,scope:task.scope,links:task.links||[]}))));
 
   function renderActivityCatalogue(){
     const host=$('#activityCatalogue');
     if(!host)return;
     const selectedCount=stage=>stage.groups.flatMap(group=>group.tasks).filter(task=>window.CResistSchedule?.has(task.id)).length;
-    host.innerHTML=catalogueStages.map(stage=>`<button type="button" class="catalogue-stage" data-open-stage="${stage.key}"><span><b>${stage.code}</b><strong>${escapeHTML(stage.name)}</strong></span><small><span id="catalogueCount_${stage.key}">${selectedCount(stage)} selected</span> / View activities</small></button>`).join('');
+    host.innerHTML=catalogueStages.map(stage=>`<button type="button" class="catalogue-stage" data-open-stage="${stage.key}"><span><b>${stage.number}.</b> <strong>${stage.code} - ${escapeHTML(stage.name)}</strong></span><small><span id="catalogueCount_${stage.key}">${selectedCount(stage)} selected</span> / View activities</small></button>`).join('');
     let dialog=$('#stageCatalogueDialog');
     if(!dialog){dialog=document.createElement('dialog');dialog.id='stageCatalogueDialog';dialog.className='schedule-dialog stage-catalogue-dialog';document.body.append(dialog)}
     const showStage=key=>{
       const stage=catalogueStages.find(item=>item.key===key);
       if(!stage)return;
-      dialog.innerHTML=`<div class="dialog-head"><div><p class="eyebrow">${stage.code} / CONSTRUCTION STAGE</p><h2>${escapeHTML(stage.name)}</h2></div><button type="button" class="dialog-close" data-stage-close aria-label="Close stage activities">Close</button></div><p class="stage-dialog-note">Select activities and set their planned working-day durations. Activity exposure and disruption are screened for rainfall and flooding only.</p><div class="catalogue-actions"><button type="button" data-stage-all>Select all activities</button><button type="button" data-stage-clear>Clear selections</button></div><div class="stage-activity-list">${stage.groups.map(group=>`<section class="catalogue-group"><h3>${escapeHTML(group.code)} - ${escapeHTML(group.title)}</h3>${group.tasks.map(task=>{const item=window.CResistSchedule?.get(task.id);return `<article class="stage-activity-row"><label class="stage-activity-name"><input type="checkbox" data-stage-select="${task.id}" ${item?'checked':''}><span><b>${escapeHTML(task.code)}</b> ${escapeHTML(task.label)}<small>${escapeHTML(task.flood)}</small></span></label><label>Duration (workdays)<input type="number" min="1" step="1" data-stage-field="durationDays" data-stage-id="${task.id}" value="${item?.durationDays||''}" placeholder="Set duration"></label><label>Relationship<select data-stage-field="relationship" data-stage-id="${task.id}">${['FS','SS','FF','SF'].map(type=>`<option ${type===(item?.relationship||'FS')?'selected':''}>${type}</option>`).join('')}</select></label><label>Predecessor codes<input data-stage-field="predecessorCodes" data-stage-id="${task.id}" value="${escapeHTML(item?.predecessorCodes||'')}" placeholder="e.g. 1.1.1, 1.1.2"></label><label>Successor codes<input data-stage-field="successorCodes" data-stage-id="${task.id}" value="${escapeHTML(item?.successorCodes||'')}" placeholder="e.g. 1.2.1"></label></article>`}).join('')}</section>`).join('')}</div>`;
+      dialog.innerHTML=`<div class="dialog-head"><div><p class="eyebrow">${stage.number}. ${stage.code} / CONSTRUCTION STAGE</p><h2>${stage.code} - ${escapeHTML(stage.name)}</h2></div><button type="button" class="dialog-close" data-stage-close aria-label="Close stage activities">Close</button></div><p class="stage-dialog-note">Select activities and set their planned working-day durations. Activity exposure and disruption are screened for rainfall and flooding only.</p><div class="catalogue-actions"><button type="button" data-stage-all>Select all activities</button><button type="button" data-stage-clear>Clear selections</button></div><div class="stage-activity-list">${stage.groups.map(group=>`<section class="catalogue-group"><h3>${stage.number}. Activities</h3>${group.tasks.map(task=>{const item=window.CResistSchedule?.get(task.id);return `<article class="stage-activity-row" data-wbs-code="${task.code}" data-activity-name="${escapeHTML(task.label)}"><label class="stage-activity-name"><input type="checkbox" data-stage-select="${task.id}" ${item?'checked':''}><span><b>${task.subcategoryNumber}</b> ${escapeHTML(task.code)} · ${escapeHTML(task.label)}<small>${escapeHTML(task.flood)}</small></span></label><label>Duration (workdays)<input type="number" min="1" step="1" data-stage-field="durationDays" data-stage-id="${task.id}" value="${item?.durationDays||''}" placeholder="Set duration"></label><label>Relationship<select data-stage-field="relationship" data-stage-id="${task.id}">${['FS','SS','FF','SF'].map(type=>`<option ${type===(item?.relationship||'FS')?'selected':''}>${type}</option>`).join('')}</select></label><label>Predecessor codes<input data-stage-field="predecessorCodes" data-stage-id="${task.id}" value="${escapeHTML(item?.predecessorCodes||'')}" placeholder="e.g. 1.1.1, 1.1.2"></label><label>Successor codes<input data-stage-field="successorCodes" data-stage-id="${task.id}" value="${escapeHTML(item?.successorCodes||'')}" placeholder="e.g. 1.2.1"></label></article>`}).join('')}</section>`).join('')}</div>`;
       dialog.querySelector('.stage-dialog-note').textContent='Selected tasks default to outdoor exposure and medium rainfall sensitivity. Confirm both against the site layout and method statement. Set planned working-day duration; use Edit dependencies to define task links.';
       dialog.querySelectorAll('.stage-activity-row').forEach(row=>{
         row.querySelectorAll('label').forEach((label,index)=>{if(index>1)label.remove()});
@@ -199,8 +259,13 @@
         });
         button.type='button';button.textContent='Edit dependencies';button.disabled=!checkbox.checked;
         button.addEventListener('click',()=>window.CResistSchedule?.editDependencies(checkbox.dataset.stageSelect));
+        const actions=document.createElement('div');actions.className='stage-row-actions';
+        const assessmentButton=document.createElement('button');assessmentButton.type='button';assessmentButton.textContent='Risk assessment';
+        assessmentButton.setAttribute('aria-label',`Open risk assessment for ${row.dataset.wbsCode} ${row.dataset.activityName}`);
+        assessmentButton.addEventListener('click',()=>{const activity=window.CResistSchedule?.get(checkbox.dataset.stageSelect);dialog.close();window.CResistSchedule?.openAssessment(row.dataset.wbsCode,activity?.id||null)});
+        actions.append(button,assessmentButton);
         checkbox.addEventListener('change',()=>{button.disabled=!checkbox.checked;row.querySelectorAll('[data-stage-field]').forEach(field=>field.disabled=!checkbox.checked)});
-        row.append(button);
+        row.append(actions);
       });
       dialog.showModal();
       dialog.querySelector('[data-stage-close]').onclick=()=>dialog.close();
@@ -437,23 +502,13 @@
 
     const initialProjectRpn=Math.round(likelihood*initialConsequence*10)/10,projectRpn=Math.round(likelihood*consequence*10)/10,projectLevel=current?'Unavailable':projectRpn<=4?'Low':projectRpn<=8?'Medium':'High';
 
-    const serious=seriousTasks.has(id)||outdoorTasks.has(id)||Boolean(wbsTask&&sensitivity>=4),severity=serious?(hazardType==='heat'?3:4):(['designer','authority'].includes(id)?2:3);
+    const severityWhy='Not assessed. A competent project risk-assessment team must determine credible harm severity from the task and site conditions.';
 
-    const workerControls=(values.sitePlan?.8:0)+(values.backupPower&&hazardType!=='heat'?.35:0)+(values.protection*.65);
-
-    const intensityExposure=Math.max(0,intensity-1)*.25,durationExposure=current?0:durationStress*.08;
-
-    const workerBaseLikelihood=serious?3:2,taskExposure=outdoorTasks.has(id)?.5:0,workerLikelihood=clamp(Math.round(workerBaseLikelihood+taskExposure+intensityExposure+durationExposure-workerControls),1,5);
-
-    const rpn=severity*workerLikelihood,level=riskMatrix[severity][workerLikelihood-1];
-
-    const severityWhy=serious?(hazardType==='heat'?'Outdoor physical work can credibly cause heat-related illness requiring medical treatment; task exertion and work at height increase concern.':hazardType==='none'?'This WSH severity is a task-based worker-safety screening estimate; no weather disruption is currently triggered. Confirm the credible harm outcome with the project RA team.':'Floodwater, unstable ground, mobile plant or electrical exposure can credibly cause serious injury if controls fail.'):(severity===2?'This coordination or approval role has lower direct physical exposure; first-aid harm is used as the screening consequence.':'Material handling, installation or inspection can credibly cause an injury requiring medical treatment.');
-
-    const likelihoodWhy=current?`WSH worker likelihood is a task-based screening placeholder, not derived from regional weather text or a bodily-harm probability. Confirm actual worker exposure and controls with the RA team. NEA outlook is informational only.`:`WSH worker likelihood is a task-exposure screening estimate informed by activity context and controls. The assumed weather-event likelihood is used only in the separate climate screen; it is not bodily-harm likelihood. Verify with the RA team.`;
+    const likelihoodWhy='Not assessed. Injury likelihood requires site-specific exposure, incident history and verified existing-control evidence; climate-event likelihood is not WSH likelihood.';
 
     const projectWhy=current?'The regional official outlook is shown in the left panel. Stage 1 does not convert forecast text or air temperature into activity stoppage, productivity loss, or injury likelihood. Use the dated scenario inputs for schedule stress testing.':`${hazardType==='heat'?'Heat disruption is conditional on the entered event and productivity assumption.':'Rainfall-related disruption is conditional on the entered event and productivity assumption.'} Schedule effects are calculated separately from this illustrative climate screen. ${reach?`${reach} downstream node${reach===1?'':'s'} sit beyond this dependency in the selected activity network.`:'No downstream dependency is currently linked.'}`;
 
-    return {id,hazard,hazardType,hazardExposure,severity,likelihood:workerLikelihood,rpn,level,severityWhy,likelihoodWhy,forecast:wx.summary||'Forecast unavailable',projectLikelihood:likelihood,initialConsequence,consequence,initialProjectRpn,projectRpn,projectLevel,projectWhy,reach};
+    return {id,hazard,hazardType,hazardExposure,severity:null,likelihood:null,rpn:null,level:'Unassessed',severityWhy,likelihoodWhy,forecast:wx.summary||'Forecast unavailable',projectLikelihood:likelihood,initialConsequence,consequence,initialProjectRpn,projectRpn,projectLevel,projectWhy,reach};
 
   }
 
@@ -465,13 +520,13 @@
 
     const activity=['site','earth','haul','drain','pump','crane','piling','transport','formwork'].includes(id);
 
-    const riskAction=assessment.level==='High'?'Not acceptable: reduce to at least Medium before work starts; management review is required, and controls should not rely on PPE or interim measures.':assessment.level==='Medium'?'Tolerable only with careful review: reduce ALARP within a defined period and obtain management attention; suitable interim controls may be used while longer-term controls are implemented.':'Acceptable under the selected matrix: no additional controls may be needed, but monitor and review frequently to ensure risk does not increase.';
+    const riskAction=assessment.level==='Unassessed'?'Not assessed: do not treat this activity as Low or authorize work. Complete and approve a site-specific risk assessment using the organization-approved matrix.':assessment.level==='High'?'Not acceptable: reduce to at least Medium before work starts; management review is required, and controls should not rely on PPE or interim measures.':assessment.level==='Medium'?'Tolerable only with careful review: reduce ALARP within a defined period and obtain management attention; suitable interim controls may be used while longer-term controls are implemented.':'Acceptable under the selected matrix: no additional controls may be needed, but monitor and review frequently to ensure risk does not increase.';
 
     return [
 
       ['WSH risk-level action',riskAction],
 
-      ['Elimination',assessment.level==='High'?'Do not start or continue the task while its WSH risk is High; eliminate exposure where practicable or add controls and re-rate to Medium or Low first.':'Remove avoidable exposure by planning work outside the forecast hazard window.'],
+      ['Elimination',assessment.level==='Unassessed'?'Do not start or continue based on this screen; resolve the missing site assessment and controls first.':assessment.level==='High'?'Do not start or continue the task while its WSH risk is High; eliminate exposure where practicable or add controls and re-rate to Medium or Low first.':'Remove avoidable exposure by planning work outside the forecast hazard window.'],
 
       ['Substitution',hazard==='heat'?'Use prefabrication or lower-exertion methods where practicable.':'Use off-site prefabrication or a lower-exposure work method where practicable.'],
 
@@ -497,15 +552,17 @@
 
     $('#dialogNodeName').textContent=name;$('#dialogHazard').textContent=`${result.hazard}. Activity exposure: ${result.hazardExposure} ${currentInputs?'The regional forecast is informational and is not converted into activity-level impact.':'Scenario assumptions: event likelihood '+runValues.likelihood+'/5 for the separate screening score; disruption work is calculated from explicit productivity and recovery settings.'}`;$('#dialogProjectScore').textContent=currentInputs?'Climate screen unavailable in outlook mode':`Climate screen ${result.initialProjectRpn} → ${result.projectRpn} / 25` ;$('#dialogProjectBand').textContent=`${result.projectLevel} disruption risk`;$('#dialogProjectBand').className=`risk-band ${levelClass(result.projectLevel)}`;$('#dialogProjectWhy').textContent=currentInputs?result.projectWhy:`Scenario screening score uses assumed event likelihood x residual activity consequence. It is separate from schedule loss and WSH RPN. ${result.projectWhy}`;
 
-    $('#dialogSeverity').textContent=`${result.severity} - ${['','Negligible','Minor','Moderate','Major','Catastrophic'][result.severity]}`;
+    $('#dialogSeverity').textContent='Not assessed';
 
-    $('#dialogSeverityReason').textContent=result.severityWhy;$('#dialogLikelihood').textContent=`${result.likelihood} - ${['','Rare','Remote','Occasional','Frequent','Almost certain'][result.likelihood]}`;
+    $('#dialogSeverityReason').textContent=result.severityWhy;
 
-    $('#dialogLikelihoodReason').textContent=result.likelihoodWhy;$('#dialogRpn').textContent=`${result.severity} x ${result.likelihood} = ${result.rpn}`;
+    $('#dialogLikelihood').textContent='Not assessed';
 
-    $('#dialogRiskBand').textContent=`${result.level} risk`;$('#dialogRiskBand').className=`risk-band ${levelClass(result.level)}`;
+    $('#dialogLikelihoodReason').textContent=result.likelihoodWhy;$('#dialogRpn').textContent='Not calculated';
 
-    $('#dialogBasis').textContent=`WSH screening: ${severityText[result.severity]}. RPN is Severity x Likelihood. Risk band follows the descriptive 5 x 5 matrix shown in the results panel. Severity reflects the credible harm outcome; existing controls reduce likelihood only where they affect exposure.`;
+    $('#dialogRiskBand').textContent='Unclassified · RA review required';$('#dialogRiskBand').className=`risk-band ${levelClass(result.level)}`;
+
+    $('#dialogBasis').textContent='No organization-approved WSH matrix or site-approved severity/likelihood ratings are configured. RPN is not calculated, and this screen does not assign a risk class or authorize work. Complete a task-specific assessment with the competent RA team.';
 
     $('#dialogControls').innerHTML=controlRecommendations(id,result).map(([name,action])=>`<li><b>${name}</b><span>${escapeHTML(action)}</span></li>`).join('');
 
@@ -627,9 +684,9 @@
 
       if(!isPrimary){markup+=`<g class="connector-node" data-node="${id}" aria-label="Supporting connector: ${escapeHTML(title)}" transform="translate(${pos.x+12},${pos.y+9})"><rect width="134" height="52" rx="5"/><text x="67" y="30" text-anchor="middle">${escapeHTML(title.length>23?title.slice(0,21)+'...':title)}</text></g>`;return;}
 
-      const assessment=assessNode(id,values),status=`CLIMATE ${assessment.projectLevel.toUpperCase()}${assessment.projectLevel==='Unavailable'?'':` · ${assessment.projectRpn}`}`,cls=levelClass(assessment.projectLevel),shortTitle=title.length>24?title.slice(0,22)+'...':title,sub=`WSH ${assessment.level.toUpperCase()} · S${assessment.severity} × L${assessment.likelihood} = ${assessment.rpn}`;
+      const assessment=assessNode(id,values),status=`CLIMATE ${assessment.projectLevel.toUpperCase()}${assessment.projectLevel==='Unavailable'?'':` · ${assessment.projectRpn}`}`,cls=levelClass(assessment.projectLevel),shortTitle=title.length>24?title.slice(0,22)+'...':title,sub='WSH REQUIRES RA REVIEW';
 
-      markup+=`<g class="hier-node primary-node ${cls}" data-node="${id}" tabindex="0" role="button" aria-label="${escapeHTML(title)}, climate disruption screen ${assessment.projectLevel}, score ${assessment.projectRpn} of 25; WSH ${assessment.level}, severity ${assessment.severity} times likelihood ${assessment.likelihood}, RPN ${assessment.rpn}. Hover or focus to highlight direct connections; select for details." transform="translate(${pos.x},${pos.y})"><rect width="${nodeW}" height="${nodeH}" rx="8"/><circle cx="15" cy="16" r="4"/><text class="hier-state" x="${nodeW-9}" y="19" text-anchor="end">${status}</text><text class="hier-name" x="13" y="42">${escapeHTML(shortTitle)}</text><text class="hier-sub" x="13" y="58">${escapeHTML(sub)}</text></g>`;
+      markup+=`<g class="hier-node primary-node ${cls}" data-node="${id}" tabindex="0" role="button" aria-label="${escapeHTML(title)}, climate disruption screen ${assessment.projectLevel}, score ${assessment.projectRpn} of 25; WSH assessment requires review. No WSH score or risk classification is assigned." transform="translate(${pos.x},${pos.y})"><rect width="${nodeW}" height="${nodeH}" rx="8"/><circle cx="15" cy="16" r="4"/><text class="hier-state" x="${nodeW-9}" y="19" text-anchor="end">${status}</text><text class="hier-name" x="13" y="42">${escapeHTML(shortTitle)}</text><text class="hier-sub" x="13" y="58">${escapeHTML(sub)}</text></g>`;
 
     });
 
@@ -857,15 +914,16 @@
 
     const v=scenario(),current=activeNodes().filter(node=>!wbsDeliverables.has(node[0])),assessments=current.map(node=>({node,result:assessNode(node[0],v)}));
 
-    const rank={Low:1,Medium:2,High:3},worst=[...assessments].sort((a,b)=>rank[b.result.projectLevel]-rank[a.result.projectLevel]||b.result.projectRpn-a.result.projectRpn)[0]?.result||{projectLevel:'Low',projectRpn:1},worstWsh=[...assessments].sort((a,b)=>rank[b.result.level]-rank[a.result.level]||b.result.rpn-a.result.rpn)[0]?.result||{level:'Low',severity:1,likelihood:1,rpn:1};
+    const rank={Low:1,Medium:2,High:3},worst=[...assessments].sort((a,b)=>rank[b.result.projectLevel]-rank[a.result.projectLevel]||b.result.projectRpn-a.result.projectRpn)[0]?.result||{projectLevel:'Low',projectRpn:1};
 
-    const count=assessments.filter(item=>item.result.projectLevel!=='Low').length,high=assessments.filter(item=>item.result.projectLevel==='High').sort((a,b)=>b.result.projectRpn-a.result.projectRpn),wshHigh=assessments.filter(item=>item.result.level==='High').length;
+    const count=assessments.filter(item=>item.result.projectLevel!=='Low').length,high=assessments.filter(item=>item.result.projectLevel==='High').sort((a,b)=>b.result.projectRpn-a.result.projectRpn);
 
     $('#riskScore').textContent=Number(worst.projectRpn).toFixed(1);$('#riskLevel').textContent=worst.projectLevel.toUpperCase();$('#riskCaption').textContent=worst.projectLevel==='High'?'High disruption screen - review controls and response':worst.projectLevel==='Medium'?'Moderate disruption screen - review cascading effects':'Lower disruption screen - monitor after changes';
+    window.dispatchEvent(new CustomEvent('c-resist-climate-risk-calculated',{detail:{level:worst.projectLevel.toLowerCase(),score:Number(worst.projectRpn)||0}}));
 
     $('.risk-card').className=`risk-card ${worst.projectLevel.toLowerCase()}`;$('#riskMeter').style.width=`${Math.min(100,worst.projectRpn*4)}%`;$('#riskMeter').style.background=worst.projectLevel==='High'?'#d76d54':worst.projectLevel==='Medium'?'#dfa343':'#58a078';
 
-    $('#wshRiskNote').textContent=`Separate WSH safety screen: highest selected node is ${worstWsh.level} (S${worstWsh.severity} x L${worstWsh.likelihood} = RPN ${worstWsh.rpn}); ${wshHigh} node${wshHigh===1?'':'s'} rated High. Verify worker exposure, severity, likelihood and existing controls with the RA team.`;
+    $('#wshRiskNote').textContent='WSH assessment unavailable: no site-approved severity/likelihood ratings or organization-approved matrix are configured. All selected work requires competent RA review; no risk class or work authorization is assigned.';
 
     $('#nodeValue').textContent=count;$('#highImpactCount').textContent=`${high.length} high`;$('#highImpactList').innerHTML=high.length?high.map(item=>`<li><span class="impact-dot"></span>${escapeHTML(item.node[3]||namesById(item.node[0]))}<strong>Screen ${Number(item.result.projectRpn).toFixed(1)}</strong></li>`).join(''):'<li class="no-high-impact">No nodes currently rate High in the climate disruption screen. Medium-risk nodes may still transmit impacts.</li>';
 
@@ -889,7 +947,7 @@
 
   const matrixBody=$('.matrix-table tbody'),matrixScores={5:[5,10,15,20,25],4:[4,8,12,16,20],3:[3,6,9,12,15],2:[2,4,6,8,10],1:[1,2,3,4,5]};
 
-  matrixBody.innerHTML=Object.keys(matrixScores).sort((a,b)=>b-a).map(severity=>`<tr><th>${severity} ${['','Negligible','Minor','Moderate','Major','Catastrophic'][severity]}</th>${matrixScores[severity].map((score,index)=>{const level=riskMatrix[severity][index];return `<td class="risk-${level.toLowerCase()}"><b>${score}</b><small>${level[0]}</small></td>`;}).join('')}</tr>`).join('');
+  matrixBody.innerHTML=Object.keys(matrixScores).sort((a,b)=>b-a).map(severity=>`<tr><th>${severity}</th>${matrixScores[severity].map(score=>`<td class="risk-unassessed"><b>${score}</b><small>RA review</small></td>`).join('')}</tr>`).join('');
 
 
 

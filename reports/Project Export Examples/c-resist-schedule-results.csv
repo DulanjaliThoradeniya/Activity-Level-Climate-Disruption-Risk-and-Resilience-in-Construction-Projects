@@ -1,0 +1,3 @@
+id,name,baselineStart,baselineFinish,baselineFloatWorkingDays,adjustedStart,adjustedFinish,projectScheduleShiftCalendarDays,directWorkLossProductiveDays,directLostProductiveHours,uncertaintyLowerHours,uncertaintyUpperHours,reworkHours,recoveryWorkdays,directlyDisrupted,inheritedShift,productivityModelStatus,interventionStart,interventionFinish
+"A1","Site survey","2026-11-10","2026-11-12","0","2026-11-10","2026-11-12","0","0.00","0.00","0.00","0.00","0.00","0","false","false","","2026-11-10","2026-11-12"
+"A2","Excavate","2026-11-13","2026-11-19","0","2026-11-13","2026-11-19","0","0.00","0.00","0.00","0.00","0.00","0","true","false","","2026-11-13","2026-11-19"

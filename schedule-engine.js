@@ -15,7 +15,9 @@
     if(!isDate(start))throw Error('Project start must be a valid YYYY-MM-DD date.');
     if(!cal.weekdays.length||cal.weekdays.some(d=>!Number.isInteger(d)||d<1||d>7))throw Error('Choose at least one valid working weekday (1=Monday through 7=Sunday).');
     if([...cal.holidays].some(d=>!isDate(d)))throw Error('Non-working dates must use valid YYYY-MM-DD dates.');
-    if(scenario&&(!isDate(scenario.start)||!isDate(scenario.end)||scenario.end<scenario.start||!['rain','heat'].includes(scenario.hazard)||!Number.isFinite(+scenario.factor)||scenario.factor<0||scenario.factor>1||!Number.isInteger(+scenario.recovery)||scenario.recovery<0))throw Error('Scenario requires valid dates, one hazard, productivity from 0 to 1, and non-negative whole recovery workdays.');
+    const hasClimateScenario=Boolean(scenario&&['start','end','hazard','factor','recovery'].some(key=>scenario[key]!==undefined));
+    if(hasClimateScenario&&(!isDate(scenario.start)||!isDate(scenario.end)||scenario.end<scenario.start||!['rain','heat'].includes(scenario.hazard)||!Number.isFinite(+scenario.factor)||scenario.factor<0||scenario.factor>1||!Number.isInteger(+scenario.recovery)||scenario.recovery<0))throw Error('Scenario requires valid dates, one hazard, productivity from 0 to 1, and non-negative whole recovery workdays.');
+    const climateScenario=hasClimateScenario?scenario:null;
     const ids=new Map();
     list.forEach(a=>{if(typeof a.id!=='string'||!a.id.trim()||ids.has(a.id))throw Error(`Duplicate or empty activity ID: ${a.id||'(empty)'}`);ids.set(a.id,a);if(typeof a.name!=='string'||!a.name.trim()||typeof a.stage!=='string'||!a.stage.trim())throw Error(`Activity ${a.id}: name and stage are required.`);if(!Number.isInteger(+a.durationDays)||+a.durationDays<1)throw Error(`Activity ${a.id}: durationDays must be a positive whole number.`);if(!['outdoor','partially sheltered','indoor','not confirmed'].includes(a.exposure))throw Error(`Activity ${a.id}: invalid exposure.`);for(const f of ['heatSensitivity','rainSensitivity'])if(!['low','medium','high'].includes(a[f]))throw Error(`Activity ${a.id}: ${f} must be low, medium, or high.`)});
     const dependencies=new Map();
@@ -74,22 +76,76 @@
       latest[id]={start:latestStart};
     }
     for(const id of order){let n=base[id].start,days=0;while(n<latest[id].start){if(work(n,cal))days++;n=add(n,1)}base[id].float=days;base[id].critical=days===0}
+    const activityProfiles=scenario?.activityProfiles||{};
+    if(!activityProfiles||typeof activityProfiles!=='object'||Array.isArray(activityProfiles))throw Error('Activity productivity profiles must be an object keyed by schedule activity ID.');
+    const rawStopDates=scenario?.mandatoryStopWorkDates||{};
+    if(!rawStopDates||typeof rawStopDates!=='object'||Array.isArray(rawStopDates))throw Error('Mandatory stop-work dates must be an object keyed by schedule activity ID.');
+    const stopDatesByActivity=new Map();
+    for(const [activityId,dates] of Object.entries(rawStopDates)){
+      if(!ids.has(activityId))throw Error(`Mandatory stop-work dates reference unknown schedule activity ${activityId}.`);
+      if(!Array.isArray(dates)||dates.some(date=>!isDate(date)))throw Error(`Activity ${activityId}: mandatory stop-work dates must be valid YYYY-MM-DD values.`);
+      stopDatesByActivity.set(activityId,new Set(dates));
+    }
+    const implementationDelays=scenario?.implementationDelays||{};
+    const recoveryDaysByActivity=scenario?.recoveryDaysByActivity||{};
+    for(const [field,values] of [['Implementation delays',implementationDelays],['Recovery days',recoveryDaysByActivity]]){
+      if(!values||typeof values!=='object'||Array.isArray(values))throw Error(`${field} must be an object keyed by schedule activity ID.`);
+      for(const [activityId,days] of Object.entries(values)){
+        if(!ids.has(activityId))throw Error(`${field} reference unknown schedule activity ${activityId}.`);
+        if(!Number.isInteger(+days)||+days<0)throw Error(`${field} for ${activityId} must be a non-negative whole number of working days.`);
+      }
+    }
+    const profileByActivity=new Map();
+    for(const [activityId,entries] of Object.entries(activityProfiles)){
+      if(!ids.has(activityId))throw Error(`Productivity profile references unknown schedule activity ${activityId}.`);
+      if(!Array.isArray(entries))throw Error(`Activity ${activityId}: productivity profile must be an array.`);
+      const byDate=new Map();
+      for(const entry of entries){
+        if(!entry||!isDate(entry.date)||!Number.isFinite(+entry.productivityFactor)||+entry.productivityFactor<0||+entry.productivityFactor>1)throw Error(`Activity ${activityId}: each productivity profile entry needs a valid date and factor from 0 to 1.`);
+        if(byDate.has(entry.date))throw Error(`Activity ${activityId}: duplicate productivity profile date ${entry.date}.`);
+        if(entry.recoveryDays!==undefined&&(!Number.isInteger(+entry.recoveryDays)||+entry.recoveryDays<0))throw Error(`Activity ${activityId}: recoveryDays must be a non-negative whole number.`);
+        if(entry.reworkHours!==undefined&&(!Number.isFinite(+entry.reworkHours)||+entry.reworkHours<0))throw Error(`Activity ${activityId}: reworkHours must be a non-negative number.`);
+        if(entry.predictedLostHours!==undefined&&(!Number.isFinite(+entry.predictedLostHours)||+entry.predictedLostHours<0))throw Error(`Activity ${activityId}: predictedLostHours must be a non-negative number.`);
+        if(entry.uncertainty&&(!Number.isFinite(+entry.uncertainty.lowerLostHours)||!Number.isFinite(+entry.uncertainty.upperLostHours)||+entry.uncertainty.lowerLostHours<0||+entry.uncertainty.upperLostHours<+entry.uncertainty.lowerLostHours))throw Error(`Activity ${activityId}: invalid uncertainty interval.`);
+        byDate.set(entry.date,entry);
+      }
+      profileByActivity.set(activityId,byDate);
+    }
+    const workHoursPerDay=scenario?.workHoursPerDay===undefined?8:Number(scenario.workHoursPerDay);
+    if(!Number.isFinite(workHoursPerDay)||workHoursPerDay<=0||workHoursPerDay>24)throw Error('workHoursPerDay must be greater than 0 and no more than 24.');
     const adj={};
     for(const id of order){
       const a=ids.get(id),links=predecessors.get(id),durationDays=duration(id);
       const dependencyStarts=links.map(link=>constrainedStart(link,adj[link.predecessorId],durationDays));
-      let day=next(dependencyStarts.length?dependencyStarts.reduce((latestDate,date)=>date>latestDate?date:latestDate,base[id].start):base[id].start,cal);
-      let remaining=durationDays,loss=0,eventDays=[],direct=false,started=day,factor=scenario?Math.max(0,Math.min(1,scenario.factor)):1;
+      const implementationStart=next(dependencyStarts.length?dependencyStarts.reduce((latestDate,date)=>date>latestDate?date:latestDate,base[id].start):base[id].start,cal);
+      const implementationDelayWorkdays=+(implementationDelays[id]||0);
+      let day=implementationStart;for(let i=0;i<implementationDelayWorkdays;i++)day=after(day,cal);
+      let remaining=durationDays,loss=0,directLostProductiveHours=0,uncertaintyLowerHours=0,uncertaintyUpperHours=0,reworkHours=0,recoveryDays=0,eventDays=[],direct=false,scenarioDirect=false,started=day,factor=climateScenario?Math.max(0,Math.min(1,climateScenario.factor)):1;
+      const profile=profileByActivity.get(id);
       while(remaining>1e-9){
         if(!work(day,cal)){day=add(day,1);continue}
-        const sensitivity=scenario&&scenario.hazard==='heat'?a.heatSensitivity:a.rainSensitivity,exposed=['outdoor','partially sheltered'].includes(a.exposure)&&sensitivity!=='low',inEvent=scenario&&day>=scenario.start&&day<=scenario.end&&exposed,prod=inEvent?factor:1;
-        if(inEvent){direct=true;eventDays.push(day)}
+        const profileEntry=profile?.get(day);
+        const sensitivity=climateScenario&&climateScenario.hazard==='heat'?a.heatSensitivity:a.rainSensitivity,exposed=['outdoor','partially sheltered'].includes(a.exposure)&&sensitivity!=='low',inEvent=climateScenario&&day>=climateScenario.start&&day<=climateScenario.end&&exposed;
+        const mandatoryStop=profileEntry?.mandatoryStopWork===true||stopDatesByActivity.get(id)?.has(day)===true;
+        const hasProfile=Boolean(profileEntry);
+        const fallbackEvent=!hasProfile&&inEvent;
+        const prod=mandatoryStop?0:(hasProfile?Number(profileEntry.productivityFactor):(fallbackEvent?factor:1));
+        if(profileEntry?.reworkHours){reworkHours+=Number(profileEntry.reworkHours);remaining+=Number(profileEntry.reworkHours)/workHoursPerDay}
+        if(profileEntry?.recoveryDays)recoveryDays+=Number(profileEntry.recoveryDays);
+        if(fallbackEvent||mandatoryStop||(hasProfile&&(prod<1||profileEntry.reworkHours>0||profileEntry.recoveryDays>0))){direct=true;eventDays.push(day)}
+        if(fallbackEvent)scenarioDirect=true;
+        if(mandatoryStop){directLostProductiveHours+=workHoursPerDay;uncertaintyLowerHours+=workHoursPerDay;uncertaintyUpperHours+=workHoursPerDay}
+        else if(hasProfile){
+          directLostProductiveHours+=Number.isFinite(Number(profileEntry.predictedLostHours))?Number(profileEntry.predictedLostHours):(1-prod)*workHoursPerDay;
+          if(profileEntry.uncertainty){uncertaintyLowerHours+=Number(profileEntry.uncertainty.lowerLostHours);uncertaintyUpperHours+=Number(profileEntry.uncertainty.upperLostHours)}
+        }
+        else if(fallbackEvent)directLostProductiveHours+=(1-prod)*workHoursPerDay;
         remaining-=prod;
-        if(inEvent)loss+=1-prod;
+        if(fallbackEvent||mandatoryStop||hasProfile)loss+=1-prod;
         if(remaining>1e-9)day=add(day,1);
       }
-      let fin=day;if(direct&&scenario.recovery>0)fin=addWork(after(fin,cal),scenario.recovery,cal);
-      adj[id]={start:started,finish:fin,direct,loss,eventDays,base:base[id],inherited:links.some(link=>adj[link.predecessorId].finish>base[link.predecessorId].finish)};
+      let fin=day;const profileRecovery=recoveryDays,scenarioRecovery=scenarioDirect&&climateScenario?climateScenario.recovery:0,plannedRecovery=+(recoveryDaysByActivity[id]||0),totalRecovery=profileRecovery+scenarioRecovery+plannedRecovery;if((direct&&profileRecovery+scenarioRecovery>0)||plannedRecovery>0)fin=addWork(after(fin,cal),totalRecovery,cal);
+      adj[id]={start:started,finish:fin,direct,loss,directWorkLossDays:loss,directLostProductiveHours,uncertaintyLowerHours,uncertaintyUpperHours,reworkHours,recoveryDays:totalRecovery,implementationStart,implementationDelayWorkdays,eventDays,base:base[id],inherited:links.some(link=>adj[link.predecessorId].finish>base[link.predecessorId].finish),modelPredicted:Boolean(profile?.size),modelStatus:profile?.values().next().value?.modelStatus||null,uncertaintyHours:profile?uncertaintyUpperHours-uncertaintyLowerHours:null};
     }
     return {order,base,adj,finishProject,adjustedFinish:order.reduce((m,id)=>adj[id].finish>m?adj[id].finish:m,start),successors,successorLinks,dependencies:predecessors};
   }

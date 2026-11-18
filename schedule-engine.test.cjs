@@ -22,4 +22,22 @@ r=run([activity('A',2)],{start:'2026-11-10',end:'2026-11-10',factor:1,hazard:'ra
 r=run([activity('A',4)],{start:'2026-11-10',end:'2026-11-10',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.A.finish,'2026-11-16');assert.equal(r.adj.A.loss,1);
 r=run([activity('A',2),activity('B',4,'','indoor'),activity('C',1,'A'),activity('D',1,'B','indoor')],{start:'2026-11-10',end:'2026-11-10',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.C.finish,'2026-11-13');assert.equal(r.adjustedFinish,r.finishProject);assert.ok(r.adj.C.inherited);
 r=run([activity('A',2),activity('B',2,'A')],{start:'2026-11-12',end:'2026-11-12',factor:0,hazard:'rain',recovery:0});assert.equal(r.adj.B.direct,true);assert.ok(r.adjustedFinish>r.finishProject); // successor is reassessed on its revised event-window date
+const profileEntry=(date,overrides={})=>({date,productivityFactor:0.5,predictedLostHours:3,uncertainty:{lowerLostHours:2,upperLostHours:4},modelStatus:'SYNTHETIC_DEMO',...overrides});
+r=run([activity('A',1)],{start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0,workHoursPerDay:6,activityProfiles:{A:[profileEntry('2026-11-09')]}});
+assert.equal(r.adj.A.finish,'2026-11-10');assert.equal(r.adj.A.loss,0.5);assert.equal(r.adj.A.directLostProductiveHours,3);assert.equal(r.adj.A.uncertaintyLowerHours,2);assert.equal(r.adj.A.uncertaintyUpperHours,4);assert.equal(r.adj.A.modelStatus,'SYNTHETIC_DEMO');
+r=run([activity('A',1)],{start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0,workHoursPerDay:6,activityProfiles:{A:[profileEntry('2026-11-09',{productivityFactor:1,predictedLostHours:0,mandatoryStopWork:true,uncertainty:{lowerLostHours:0,upperLostHours:0}})]}});
+assert.equal(r.adj.A.direct,true);assert.equal(r.adj.A.directLostProductiveHours,6);assert.equal(r.adj.A.finish,'2026-11-10');
+r=run([activity('A',1)],{start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0,workHoursPerDay:6,mandatoryStopWorkDates:{A:['2026-11-09']}});
+assert.equal(r.adj.A.direct,true);assert.equal(r.adj.A.directLostProductiveHours,6);assert.equal(r.adj.A.finish,'2026-11-10');
+r=run([activity('A',1),activity('B',1,'A')],{start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0,activityProfiles:{A:[profileEntry('2026-11-09',{productivityFactor:0,predictedLostHours:8,uncertainty:{lowerLostHours:7,upperLostHours:8}})]}});
+assert.equal(r.adj.A.direct,true);assert.equal(r.adj.B.direct,false);assert.equal(r.adj.B.inherited,true);assert.equal(r.adj.B.start,'2026-11-12');
+r=run([activity('A',1)],{start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0,activityProfiles:{A:[profileEntry('2026-11-09',{productivityFactor:1,predictedLostHours:0,reworkHours:8,recoveryDays:1,uncertainty:{lowerLostHours:0,upperLostHours:0}})]}});
+assert.equal(r.adj.A.reworkHours,8);assert.equal(r.adj.A.recoveryDays,1);assert.equal(r.adj.A.direct,true);assert.equal(r.adj.A.finish,'2026-11-12');
+ r=run([activity('A',1),activity('B',1,'A')],{implementationDelays:{A:1},recoveryDaysByActivity:{A:1}});
+assert.equal(r.adj.A.implementationStart,'2026-11-09');assert.equal(r.adj.A.start,'2026-11-10');assert.equal(r.adj.A.finish,'2026-11-12');assert.equal(r.adj.A.implementationDelayWorkdays,1);assert.equal(r.adj.B.start,'2026-11-13');assert.equal(r.adj.B.inherited,true);
+assert.throws(()=>run([activity('A',1)],{implementationDelays:{missing:1}}),/unknown schedule activity/i);
+assert.throws(()=>run([activity('A',1)],{recoveryDaysByActivity:{A:-1}}),/non-negative whole number/i);
+const profileScenario={start:'2026-11-09',end:'2026-11-09',factor:1,hazard:'rain',recovery:0};
+assert.throws(()=>run([activity('A',1)],{...profileScenario,activityProfiles:{A:[profileEntry('2026-11-09',{productivityFactor:1.2})]}}),/factor from 0 to 1/i);
+assert.throws(()=>run([activity('A',1)],{...profileScenario,activityProfiles:{A:[profileEntry('2026-11-09'),profileEntry('2026-11-09')]}}),/duplicate productivity profile date/i);
 console.log('PASS: calendar chain, parallel branches, multiple predecessors, FS/SS/FF/SF relationships, lag/lead, weekend/holiday, dependency validation, scenario behavior, and float.');

@@ -1,5 +1,23 @@
-private-inputs/
+# Local/editor files
+.vscode/
 .DS_Store
 Thumbs.db
-.vscode/
+
+# Python environments and bytecode
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Runtime forecast and NEA data caches
 .climate-cache/
+.forecast-api-cache/
+forecast-results/
+private-inputs/
+
+# Generated diagnostic files
+*.tmp
+*.log
+lightning_logs/
+climate-rainfall-diagnostics-*.png
+climate-forecasts-*-test.json

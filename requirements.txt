@@ -3,3 +3,11 @@ prophet
 matplotlib
 scikit-learn
 numpy
+xgboost
+lightgbm
+torch
+pytorch-lightning
+pytorch-forecasting
+neuralprophet
+holidays==0.24
+setuptools<81

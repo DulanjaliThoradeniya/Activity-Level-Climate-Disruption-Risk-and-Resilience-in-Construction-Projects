@@ -1,0 +1,38 @@
+{
+  "feature_set": "weather_only",
+  "numeric_input_fields": [
+    "rainfall_mm",
+    "mean_temperature_c",
+    "maximum_temperature_c",
+    "minimum_temperature_c",
+    "recent_cumulative_rainfall_mm",
+    "recent_rainfall_window_days",
+    "planned_productive_hours"
+  ],
+  "categorical_input_fields": [
+    "nea_station_id"
+  ],
+  "numeric_medians_fit_on_training_only": {
+    "rainfall_mm": 0.0,
+    "mean_temperature_c": 28.0,
+    "maximum_temperature_c": 32.0,
+    "minimum_temperature_c": 25.3,
+    "recent_cumulative_rainfall_mm": 33.2,
+    "recent_rainfall_window_days": 7.0,
+    "planned_productive_hours": 8.0
+  },
+  "encoded_feature_names": [
+    "maximum_temperature_c",
+    "mean_temperature_c",
+    "minimum_temperature_c",
+    "nea_station_id=S24",
+    "planned_productive_hours",
+    "rainfall_mm",
+    "recent_cumulative_rainfall_mm",
+    "recent_rainfall_window_days"
+  ],
+  "target": "weather_attributable_lost_hours",
+  "target_unit": "productive hours lost per activity working day",
+  "target_is_weather_attributable": true,
+  "date_and_project_id_used_as_predictors": false
+}

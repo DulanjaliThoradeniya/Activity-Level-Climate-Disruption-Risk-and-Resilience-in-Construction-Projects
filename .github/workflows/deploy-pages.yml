@@ -17,12 +17,24 @@ concurrency:
 
 jobs:
   deploy:
+    timeout-minutes: 90
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install forecasting dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Generate Prophet forecasts from the latest bundled NEA history
+        run: python "Climate Model/Trained model/build_prophet_forecasts.py"
+      - name: Generate XGBoost forecasts
+        run: python "Climate Model/Trained model/build_multi_model_forecasts.py"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

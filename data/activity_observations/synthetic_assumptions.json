@@ -1,0 +1,42 @@
+{
+  "dataset_type": "synthetic_demonstration",
+  "empirical_observations": false,
+  "training_eligible": false,
+  "assumptions": {
+    "project_id": "DEMO-SYNTHETIC-001",
+    "project_name": "Synthetic demonstration project (not a real project)",
+    "location": "Changi",
+    "start_date": "2025-01-01",
+    "working_weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "holidays": [],
+    "activity_duration_workdays": 5,
+    "planned_productive_hours_per_day": 8.0,
+    "default_exposure": "outdoor",
+    "default_heat_sensitivity": "low",
+    "default_rain_sensitivity": "medium",
+    "rainfall_threshold_mm": 5.0,
+    "rain_lost_hours_per_excess_mm": 0.04,
+    "heat_threshold_mean_temperature_c": 32.0,
+    "heat_lost_hours_per_excess_degree": 0.2,
+    "sensitivity_multipliers": {
+      "low": 0.5,
+      "medium": 1.0,
+      "high": 1.5
+    },
+    "exposure_multipliers": {
+      "outdoor": 1.0,
+      "partially sheltered": 0.5,
+      "indoor": 0.0
+    },
+    "other_disruption_hours_per_day": 0.0,
+    "other_disruption_assumption": "No non-weather disruption is modelled; assumed 0 hours for demonstration.",
+    "schedule_assumption": "All 69 canonical WBS activities are scheduled sequentially in catalogue order for the configured number of weekdays; no dependencies, holidays other than the explicit list, or parallel work are inferred.",
+    "productivity_assumption": "Synthetic lost hours are deterministic functions of same-day observed station rainfall and mean temperature, activity sensitivity, and exposure. They are not historical measurements, causal estimates, or validated effects."
+  }
+}

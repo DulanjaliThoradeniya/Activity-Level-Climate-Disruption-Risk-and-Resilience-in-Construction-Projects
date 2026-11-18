@@ -1,0 +1,447 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-10T06:12:53.412230+00:00",
+  "model_profile": "SYNTHETIC_DEMO",
+  "empirically_validated": false,
+  "real_safety_decision_use_permitted": false,
+  "training_started": true,
+  "training_data_type": "synthetic",
+  "training_dataset_quality": {
+    "status": "VALID",
+    "row_count": 345,
+    "synthetic_rows": 345,
+    "errors": [],
+    "warnings": []
+  },
+  "target": {
+    "field": "weather_attributable_lost_hours",
+    "unit": "weather-attributable productive hours lost per activity working day"
+  },
+  "prediction_timing": "Retrospective same-day observed weather; not a forward weather forecast or a real-time safety decision.",
+  "leakage_controls": {
+    "date_and_project_id_are_not_predictors": true,
+    "train_only_imputation_and_category_vocabulary": true,
+    "weather_event_grouped_validation": true,
+    "same_date_station_observations_stay_in_one_weather_group": true,
+    "temporal_embargo_days": 7,
+    "weather_event_definition": "Rows from the same date are grouped. Positive-rainfall dates and warm episodes (mean temperature >= 32 C or daily maximum >= 35 C), allowing at most one intervening inactive day, are grouped into climate events. Those thresholds define split groups only, not safety limits. Event ids are used only for split isolation.",
+    "project_grouped_holdout": {
+      "available": false,
+      "reason": "At least three projects are required for grouped holdout.",
+      "project_count": 1
+    }
+  },
+  "chronological_split": {
+    "method": "chronological_weather_event_grouped_with_embargo",
+    "validation_fraction_requested": 0.2,
+    "embargo_days": 7,
+    "training_rows": 277,
+    "validation_rows": 63,
+    "training_start": "2025-01-01",
+    "training_end": "2026-01-22",
+    "validation_start": "2026-01-30",
+    "validation_end": "2026-04-28",
+    "training_event_groups": 185,
+    "validation_event_groups": 48,
+    "discarded_embargo_rows": 5
+  },
+  "heavy_rainfall_segment_threshold_mm": 10.0,
+  "model_comparison": {
+    "rule_baseline__kg_enhanced": {
+      "overall": {
+        "n": 63,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "prediction_bias": 0.0
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "prediction_bias": 0.0
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.0,
+        "rmse": 0.0,
+        "prediction_bias": 0.0
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.0,
+          "rmse": 0.0,
+          "prediction_bias": 0.0
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.0,
+          "rmse": 0.0,
+          "prediction_bias": 0.0
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.0,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "kg_enhanced",
+      "model_type": "transparent_rule_based",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "statistical_ridge__weather_only": {
+      "overall": {
+        "n": 63,
+        "mae": 0.019868374012669075,
+        "rmse": 0.04405174457454164,
+        "prediction_bias": 0.018102940802951932
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.0552621563068506,
+        "rmse": 0.06045890637138349,
+        "prediction_bias": 0.04135936978032811
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.00072882654513378,
+        "rmse": 0.0029389386456602365,
+        "prediction_bias": 0.00072882654513378
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.020374981576228492,
+          "rmse": 0.042067612358898325,
+          "prediction_bias": 0.01640275685436492
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.019463087961821557,
+          "rmse": 0.045576901523100025,
+          "prediction_bias": 0.019463087961821557
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.0977204800994147,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "weather_only",
+      "model_type": "statistical",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "statistical_ridge__kg_enhanced": {
+      "overall": {
+        "n": 63,
+        "mae": 0.027369529305912403,
+        "rmse": 0.05378297677455522,
+        "prediction_bias": 0.026218018722608247
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.06030657122692714,
+        "rmse": 0.06817448165860836,
+        "prediction_bias": 0.051238425383406914
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.007777415143622262,
+        "rmse": 0.015995044986463883,
+        "prediction_bias": 0.007777415143622262
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.02589408653217987,
+          "rmse": 0.05238069595211482,
+          "prediction_bias": 0.02330318771974552
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.028549883524898435,
+          "rmse": 0.05487900888842567,
+          "prediction_bias": 0.028549883524898435
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.09368176970293932,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "kg_enhanced",
+      "model_type": "statistical",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "xgboost__weather_only": {
+      "overall": {
+        "n": 63,
+        "mae": 0.013241882712595052,
+        "rmse": 0.04565263143665116,
+        "prediction_bias": -0.009569970857056366
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.08815751579403883,
+        "rmse": 0.12794512996418345,
+        "prediction_bias": -0.08815751579403883
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.002267945557832718,
+        "rmse": 0.002267945557832718,
+        "prediction_bias": 0.002267945557832718
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.019375472061336052,
+          "rmse": 0.06320439731707606,
+          "prediction_bias": -0.016135549835860737
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.008335011233602257,
+          "rmse": 0.023572362855501513,
+          "prediction_bias": -0.004317507674012871
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.00852146068215369,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "weather_only",
+      "model_type": "xgboost",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "xgboost__kg_enhanced": {
+      "overall": {
+        "n": 63,
+        "mae": 0.011484506934881216,
+        "rmse": 0.03669601104641555,
+        "prediction_bias": -0.007812595079342531
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.07431818154454237,
+        "rmse": 0.10276978023656487,
+        "prediction_bias": -0.07431818154454237
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.002267945557832718,
+        "rmse": 0.002267945557832718,
+        "prediction_bias": 0.002267945557832718
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.015421376561479919,
+          "rmse": 0.048324666546989054,
+          "prediction_bias": -0.012181454336004607
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.008335011233602257,
+          "rmse": 0.023572362855501513,
+          "prediction_bias": -0.004317507674012871
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.00852146068215369,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "kg_enhanced",
+      "model_type": "xgboost",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "lightgbm__weather_only": {
+      "overall": {
+        "n": 63,
+        "mae": 0.06947524676523657,
+        "rmse": 0.19529468431718675,
+        "prediction_bias": 0.022755914392221847
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.3266634415411996,
+        "rmse": 0.40267058492884955,
+        "prediction_bias": -0.02562265797734884
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.004505558738446451,
+        "rmse": 0.009950107332232382,
+        "prediction_bias": 0.004505558738446451
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.12746982378787863,
+          "rmse": 0.28189133980386555,
+          "prediction_bias": 0.07094014692263093
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.023079585147122928,
+          "rmse": 0.071287044653672,
+          "prediction_bias": -0.015791471632105425
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.2646921223171913,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "weather_only",
+      "model_type": "lightgbm",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    },
+    "lightgbm__kg_enhanced": {
+      "overall": {
+        "n": 63,
+        "mae": 0.0748186376397928,
+        "rmse": 0.17628142111408296,
+        "prediction_bias": 0.026690055162722527
+      },
+      "heavy_rainfall_threshold_mm": 10.0,
+      "heavy_rainfall": {
+        "n": 8,
+        "mae": 0.31015254875796394,
+        "rmse": 0.3725732064385863,
+        "prediction_bias": -0.054364714882985415
+      },
+      "dry_weather": {
+        "n": 39,
+        "mae": 0.02024102609981283,
+        "rmse": 0.0290282612247814,
+        "prediction_bias": 0.02024102609981283
+      },
+      "by_wbs_stage": {
+        "FN - Finishing": {
+          "n": 28,
+          "mae": 0.12232457994115754,
+          "rmse": 0.25330963077478275,
+          "prediction_bias": 0.05655501924434765
+        },
+        "XW - External works": {
+          "n": 35,
+          "mae": 0.03681388379870102,
+          "rmse": 0.06784272797725452,
+          "prediction_bias": 0.002798083897422432
+        }
+      },
+      "prediction_interval": {
+        "method": "validation_absolute_residual_90th_percentile",
+        "half_width_hours": 0.26805403401041294,
+        "calibrated_on_same_validation_fold": true
+      },
+      "feature_set": "kg_enhanced",
+      "model_type": "lightgbm",
+      "evaluation_profile": "SYNTHETIC_DEMO"
+    }
+  },
+  "project_grouped_holdout_metrics": {},
+  "weather_only_vs_kg_enhanced": {
+    "statistical_ridge": {
+      "weather_only_mae": 0.019868374012669075,
+      "kg_enhanced_mae": 0.027369529305912403,
+      "kg_minus_weather_mae": 0.007501155293243328,
+      "interpretation": "Descriptive held-out comparison only; not causal evidence."
+    },
+    "xgboost": {
+      "weather_only_mae": 0.013241882712595052,
+      "kg_enhanced_mae": 0.011484506934881216,
+      "kg_minus_weather_mae": -0.0017573757777138363,
+      "interpretation": "Descriptive held-out comparison only; not causal evidence."
+    },
+    "lightgbm": {
+      "weather_only_mae": 0.06947524676523657,
+      "kg_enhanced_mae": 0.0748186376397928,
+      "kg_minus_weather_mae": 0.0053433908745562225,
+      "interpretation": "Descriptive held-out comparison only; not causal evidence."
+    }
+  },
+  "rule_baseline_assumptions": {
+    "model_type": "transparent_rule_based_baseline",
+    "rain_threshold_mm": 5.0,
+    "rain_lost_hours_per_excess_mm": 0.04,
+    "heat_threshold_mean_temperature_c": 32.0,
+    "heat_lost_hours_per_excess_degree": 0.2,
+    "sensitivity_multipliers": {
+      "low": 0.5,
+      "medium": 1.0,
+      "high": 1.5
+    },
+    "exposure_multipliers": {
+      "outdoor": 1.0,
+      "partially sheltered": 0.5,
+      "indoor": 0.0,
+      "not confirmed": 1.0
+    },
+    "evidence_status": "ILLUSTRATIVE_ASSUMPTIONS_NOT_VALIDATED_EFFECTS"
+  },
+  "training_parameters": {
+    "validation_fraction": 0.2,
+    "embargo_days": 7,
+    "random_seed": 5231,
+    "model_variants": [
+      [
+        "statistical_ridge",
+        "weather_only"
+      ],
+      [
+        "statistical_ridge",
+        "kg_enhanced"
+      ],
+      [
+        "xgboost",
+        "weather_only"
+      ],
+      [
+        "xgboost",
+        "kg_enhanced"
+      ],
+      [
+        "lightgbm",
+        "weather_only"
+      ],
+      [
+        "lightgbm",
+        "kg_enhanced"
+      ]
+    ]
+  },
+  "environment": {
+    "python": "3.14.7",
+    "scikit_learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "lightgbm": "4.7.0"
+  },
+  "model_artifacts": {
+    "statistical_ridge__weather_only": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\statistical_ridge__weather_only.joblib",
+    "statistical_ridge__kg_enhanced": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\statistical_ridge__kg_enhanced.joblib",
+    "xgboost__weather_only": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\xgboost__weather_only.joblib",
+    "xgboost__kg_enhanced": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\xgboost__kg_enhanced.joblib",
+    "lightgbm__weather_only": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\lightgbm__weather_only.joblib",
+    "lightgbm__kg_enhanced": "F:\\UNI\\PhD\\Semester 1\\BPS5231\\Assigment\\C_RESIST_AI_Static_Editable_Kit\\C_RESIST_STATIC_KIT\\models\\delay_model\\synthetic_demo\\lightgbm__kg_enhanced.joblib"
+  },
+  "synthetic_demo_interval_widths_hours": {
+    "rule_baseline__kg_enhanced": 0.0,
+    "statistical_ridge__weather_only": 0.0977204800994147,
+    "statistical_ridge__kg_enhanced": 0.09368176970293932,
+    "xgboost__weather_only": 0.00852146068215369,
+    "xgboost__kg_enhanced": 0.00852146068215369,
+    "lightgbm__weather_only": 0.2646921223171913,
+    "lightgbm__kg_enhanced": 0.26805403401041294
+  },
+  "uncertainty_caveat": "Residual intervals use the held-out validation fold and are not independently calibrated. Synthetic intervals are demonstration-only."
+}

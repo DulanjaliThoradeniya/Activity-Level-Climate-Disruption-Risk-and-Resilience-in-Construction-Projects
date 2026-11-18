@@ -2,7 +2,8 @@ name: Update bundled NEA climate history
 
 on:
   schedule:
-    - cron: "23 4 5 * *"
+    # 07:00 Singapore time (SGT, UTC+8) on every calendar day.
+    - cron: "0 23 * * *"
   workflow_dispatch:
 
 permissions:
@@ -10,25 +11,38 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   update-history:
+    timeout-minutes: 90
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install forecasting dependencies
+        run: python -m pip install -r requirements.txt
       - name: Download and bundle the latest NEA records
         run: python update_climate_data.py --refresh-recent
-      - name: Publish the refreshed static data
+      - name: Generate Prophet forecasts from the refreshed NEA history
+        run: python "Climate Model/Trained model/build_prophet_forecasts.py"
+      - name: Refresh 14-day rainfall forecasts for all five models
+        # Stations missing yesterday's reading keep their previous forecast and are reported.
+        run: python refresh_station_forecasts.py --through "$(TZ=Asia/Singapore date -d yesterday +%F)" --target rainfall || echo "Some stations were not refreshed; see log above."      - name: Publish the refreshed static data
         run: |
-          if [ -z "$(git status --porcelain -- data/climate-history.json)" ]; then
-            echo "The bundled climate history is already current."
+          if [ -z "$(git status --porcelain -- data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json)" ]; then
+            echo "The bundled NEA history and Prophet forecasts are already current."
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/climate-history.json
-            git commit -m "Update bundled NEA climate history"
+            git add data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json
+            git commit -m "Update bundled NEA climate forecasts"
             git push
           fi
       - uses: actions/configure-pages@v5

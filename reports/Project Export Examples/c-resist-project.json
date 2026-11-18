@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "activities": [
+    {
+      "id": "wbs_ew_01#1",
+      "catalogueId": "wbs_ew_01",
+      "catalogueCode": "EW-01",
+      "catalogueNumber": "2.1",
+      "name": "Bulk excavation",
+      "stage": "2. EW - Earthwork",
+      "durationDays": "3",
+      "predecessors": "",
+      "dependencies": [],
+      "exposure": "outdoor",
+      "heatSensitivity": "low",
+      "rainSensitivity": "medium",
+      "scope": "Mass excavation to formation level",
+      "resources": []
+    }
+  ],
+  "projectStart": "2026-11-10",
+  "workdays": "1,2,3,4,5",
+  "workHours": 8,
+  "holidays": "",
+  "scenario": {
+    "start": "2026-11-16",
+    "end": "2026-11-20",
+    "hazard": "rain",
+    "factor": 0.5,
+    "recovery": 0
+  },
+  "intervention": {
+    "factor": 0.5,
+    "recovery": 0
+  }
+}

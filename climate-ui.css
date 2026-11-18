@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
 .mode-tabs{grid-template-columns:1fr}
 .continuity-controls[hidden]{display:none}
 .climate-forecast-dialog{width:min(1200px,96vw);max-width:96vw;max-height:92vh;height:min(900px,92vh);padding:20px;display:flex;flex-direction:column;gap:10px}
@@ -5,6 +7,10 @@
 .climate-forecast-dialog .dialog-head{flex:none}
 .climate-forecast-station,.climate-forecast-status,.climate-forecast-help{margin:0;color:#66756c;font-size:12px;line-height:1.5}
 .climate-forecast-controls{display:flex;align-items:end;gap:10px;flex:none}
+.climate-model-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.climate-model-tabs button{flex:0 0 auto;padding:7px 10px;border:1px solid #cbd8ce;border-radius:999px;background:#fff;color:#526059;font-size:11px;font-weight:700;cursor:pointer}
+.climate-model-tabs button.active{background:#285f46;border-color:#285f46;color:#fff}
+.climate-model-tabs button:disabled{opacity:.45;cursor:not-allowed}
 .climate-forecast-controls label{display:grid;gap:5px;color:#526059;font-size:11px;font-weight:700}
 .climate-forecast-controls select,.climate-forecast-controls button{min-height:36px;padding:7px 10px;border:1px solid #cbd8ce;border-radius:8px;background:#fff;font:inherit;color:#24382f}
 .climate-forecast-controls button{background:#285f46;color:#fff;border-color:#285f46;font-weight:700;cursor:pointer}
@@ -15,7 +21,7 @@
 .climate-forecast-help li{margin:5px 0}
 .climate-forecast-help code{display:block;overflow-wrap:anywhere;padding:8px;background:#edf2ee;border-radius:6px;color:#263d30}
 .climate-forecast-help a{color:#28765d}
-#climateForecastFrame{width:100%;height:100%;min-height:0;flex:1;border:1px solid #e0e5df;border-radius:10px;background:#fff}
+#climateForecastFrame{width:100%;height:100%;min-height:400px;flex:1 0 400px;border:1px solid #e0e5df;border-radius:10px;background:#fff}
 #climateForecastFrame[hidden]{display:none}
 @media(max-width:700px){.climate-forecast-dialog{width:100vw;max-width:100vw;height:95vh;max-height:95vh;padding:14px;border-radius:12px}.climate-forecast-station{font-size:10px}.climate-forecast-controls{align-items:stretch;flex-direction:column}.climate-forecast-controls select,.climate-forecast-controls button{width:100%}}
 
@@ -65,10 +71,8 @@ body{background:#f4f7f5}
 .gantt-simple-legend{display:flex;gap:16px;align-items:center;padding:10px 20px;border-top:1px solid #edf1ed;color:#637168;font-size:10px}
 .gantt-simple-legend span{display:flex;align-items:center;gap:6px}
 .planned-swatch,.actual-swatch{display:inline-block;width:16px;height:7px;border-radius:4px}
-.planned-swatch{background:#54866a}
-.actual-swatch{background:#d8894e}
-.gantt-canvas{flex:1;min-height:280px;margin:0 12px 12px;border:1px solid #edf1ed;border-radius:8px;background:#fff;background-image:none}
-.gantt-chart svg{font-family:var(--sans)}
+.planned-swatch{background:#2479b8}
+.actual-swatch{background:#54866a}.gantt-canvas{flex:1;min-height:280px;margin:0 12px 12px;border:1px solid #edf1ed;border-radius:8px;background:#fff;background-image:none}.gantt-chart svg{font-family:var(--sans)}
 .gantt-empty,.impact-empty{padding:16px;color:#718078;font-size:12px;line-height:1.5}
 .results-panel>.panel-head h2{font-size:16px}
 .results-panel>.panel-head .eyebrow{font-size:9px;letter-spacing:1.1px}
@@ -88,6 +92,13 @@ body{background:#f4f7f5}
 .completion-result{display:flex;justify-content:space-between;gap:8px;padding:10px;border-radius:8px;background:#eff6f0;color:#50675a;font-size:10px}
 .completion-result strong{color:#285f46}
 .response-heading{padding-top:11px;border-top:1px solid #e9eee9}
+.results-panel>.response-heading{padding-top:13px;margin-top:16px;border-top:1px solid #e9eee9}
+.wsh-output-note{margin:7px 0 10px;color:#718078;font-size:10px;line-height:1.5}
+.wsh-control-list{display:grid;gap:8px;margin:0;padding-left:22px}
+.wsh-control-list li{padding-left:2px;color:#56685d;font-size:10px;line-height:1.45}
+.wsh-control-list li::marker{color:#4e8966;font-weight:700}
+.wsh-control-list strong{display:block;margin-bottom:2px;color:#344a3b;font-size:10px}
+.wsh-source{display:inline-block;margin-top:10px;color:#28765d;font-size:9px;text-decoration:underline}
 .response-heading .stage-intro{margin:5px 0 0;font-size:10px;line-height:1.4;color:#758279}
 .stage-response{margin-top:4px}
 .stage-response>.intervention-head{display:none}
@@ -105,3 +116,193 @@ body{background:#f4f7f5}
 footer{display:none}
 @media(max-width:1050px){.dashboard{grid-template-columns:minmax(260px,34%) minmax(0,1fr);height:auto;overflow:visible}.results-panel{grid-column:1/-1}.dashboard>.panel{max-height:none}.map-panel{min-height:60vh}}
 @media(max-width:700px){.dashboard{display:flex;flex-direction:column;padding:8px}.dashboard>.panel{max-height:none}.controls-panel{order:1}.map-panel{order:2;min-height:55vh}.results-panel{order:3}.impacted-activity-list{max-height:none}.gantt-canvas{min-height:320px}.gantt-simple-legend{flex-wrap:wrap}}
+
+/* Main workspace only: dialog and forecast report styles remain independent. */
+body{background:#f3f6f8}
+body>.topbar{
+  height:64px;
+  padding:0 20px;
+  background:#102431;
+  border-bottom:1px solid #193543;
+}
+body>.topbar .brand{
+  color:#fff;
+  font:600 19px/1.1 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  letter-spacing:0;
+  text-decoration:none;
+}
+body>.topbar .brand em{
+  margin-top:3px;
+  color:#b5c8d0;
+  font:400 10px/1.2 Inter, 'Segoe UI', sans-serif;
+  letter-spacing:.03em;
+}
+
+.dashboard{
+  grid-template-columns:minmax(265px,285px) minmax(0,1fr) minmax(250px,280px);
+  gap:12px;
+  padding:12px;
+  height:calc(100vh - 64px);
+  min-height:560px;
+  color:#263845;
+  font:400 13px/1.5 Inter, 'Segoe UI', Arial, sans-serif;
+}
+.dashboard>.panel{
+  min-width:0;
+  border:1px solid #dce4e8;
+  border-radius:6px;
+  background:#fff;
+  box-shadow:none;
+}
+.dashboard .controls-panel,.dashboard .results-panel{padding:18px}
+.dashboard .panel-head h1,.dashboard .panel-head h2{
+  color:#263845;
+  font-family:'IBM Plex Sans', 'Segoe UI', sans-serif;
+  font-weight:600;
+  letter-spacing:0;
+}
+.dashboard .controls-panel>.panel-head h1{font-size:20px}
+.dashboard .map-heading h2{font-size:18px}
+.dashboard .results-panel>.panel-head h2{font-size:16px}
+.dashboard .eyebrow{
+  color:#667987;
+  font:500 10px/1.4 Inter, 'Segoe UI', sans-serif;
+  letter-spacing:.04em;
+}
+.dashboard .input-section-title{
+  color:#263845;
+  font-family:'IBM Plex Sans', 'Segoe UI', sans-serif;
+  font-size:14px!important;
+  font-weight:600!important;
+}
+.dashboard .project-summary{
+  gap:5px;
+  margin:12px 0 16px;
+  padding:0 0 16px;
+  border-bottom:1px solid #dce4e8;
+}
+.dashboard .project-summary>strong{color:#263845;font-size:15px;font-weight:600}
+.dashboard .project-summary>span{color:#667987;font-size:12px}
+.dashboard .project-summary #calculatedCompletion{color:#263845;font-weight:600}
+.dashboard .field,.dashboard .scenario-duration>span{color:#526774;font-size:12px;font-weight:500}
+.dashboard .location-field select,.dashboard .storeys-field select,
+.dashboard .compact-toolbar input,.dashboard .compact-toolbar select{
+  min-height:36px;
+  border:1px solid #cbd8de;
+  border-radius:5px;
+  background:#fff;
+  color:#263845;
+  font:400 12px Inter, 'Segoe UI', sans-serif;
+}
+.dashboard .project-summary button,.dashboard #currentTab,
+.dashboard .compact-toolbar button,.dashboard .compact-toolbar summary,
+.dashboard .reset-schedule-button{
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid #cbd8de;
+  border-radius:5px;
+  background:#fff;
+  color:#315467;
+  font:500 11px/1.3 Inter, 'Segoe UI', sans-serif;
+  cursor:pointer;
+}
+.dashboard .project-summary button:hover,.dashboard #currentTab:hover,
+.dashboard .compact-toolbar button:hover,.dashboard .compact-toolbar summary:hover,
+.dashboard .reset-schedule-button:hover{border-color:#168a91;background:#f0f8f8;color:#126c72}
+.dashboard button:focus-visible,.dashboard select:focus-visible,
+.dashboard input:focus-visible,.dashboard summary:focus-visible,
+.dashboard a:focus-visible,.dashboard .gantt-canvas:focus-visible{
+  outline:2px solid #168a91;
+  outline-offset:2px;
+}
+.dashboard .weather-card{
+  padding:12px;
+  border:1px solid #dce4e8;
+  border-radius:6px;
+  background:#f7fafb;
+  box-shadow:none;
+}
+.dashboard .weather-top strong{color:#263845;font-size:12px;font-weight:600}
+.dashboard .weather-top small,.dashboard .weather-bottom,
+.dashboard .weather-card p{color:#526774;font-size:11px;line-height:1.5}
+.dashboard .weather-icon{
+  flex:0 0 38px;
+  width:38px;
+  border-radius:5px;
+  background:#e6f3f4;
+  color:#126c72;
+  font-size:10px;
+}
+.dashboard .weather-top>div{min-width:0;flex:1}
+.dashboard .weather-live{font-size:9px}
+.dashboard .catalogue-stage{
+  gap:3px 8px;
+  padding:10px;
+  border:1px solid #dce4e8;
+  border-radius:5px;
+  background:#fff;
+  color:#263845;
+}
+.dashboard .catalogue-stage:hover{border-color:#8ebfc1;background:#f5fafb}
+.dashboard .catalogue-stage>span b{
+  color:#397fa3;
+  font:500 11px 'IBM Plex Mono', Consolas, monospace;
+}
+.dashboard .catalogue-stage strong{font-size:12px;font-weight:600}
+.dashboard .catalogue-stage small{color:#667987;font-size:11px}
+.dashboard .scenario-duration input{accent-color:#168a91}
+.dashboard #runBtn{
+  min-height:38px;
+  border:1px solid #168a91;
+  border-radius:5px;
+  background:#168a91;
+  color:#fff;
+  font:600 12px Inter, 'Segoe UI', sans-serif;
+}
+.dashboard #runBtn:hover{background:#126f75;border-color:#126f75}
+.dashboard .map-heading{padding:18px 20px 12px}
+.dashboard .map-tools .live{color:#667987;font:400 11px/1.4 Inter, 'Segoe UI', sans-serif}
+.dashboard .gantt-simple-legend{
+  flex-wrap:wrap;
+  gap:8px 14px;
+  padding:10px 20px;
+  border-top:1px solid #e8eef1;
+  color:#526774;
+  font-size:11px;
+}
+.dashboard .gantt-window-legend,.dashboard .gantt-forecast-period{color:#526774;font-size:11px}
+.dashboard .gantt-forecast-period{font-family:'IBM Plex Mono', Consolas, monospace;line-height:1.5}
+.dashboard .gantt-canvas{margin:0 12px 12px;border:1px solid #e4ebee;border-radius:5px}
+.dashboard .gantt-empty,.dashboard .gantt-unscheduled,.dashboard .impact-empty{color:#667987;font-size:12px;line-height:1.55}
+.dashboard .compact-toolbar{
+  gap:7px;
+  padding:10px 12px;
+  border-top:1px solid #e8eef1;
+  background:#fff;
+  color:#526774;
+  font-size:11px;
+}
+.dashboard .compact-toolbar input,.dashboard .compact-toolbar select{padding:5px 7px}
+.dashboard .compact-toolbar input[type=date]{font-family:'IBM Plex Mono', Consolas, monospace}
+.dashboard .more-menu-pop{border-color:#dce4e8;border-radius:6px}
+.dashboard .response-heading{border-color:#e8eef1}
+.dashboard .wsh-output-note,.dashboard .wsh-control-list li{color:#526774;font-size:11px;line-height:1.55}
+.dashboard .wsh-control-list strong{color:#263845;font-size:11px;font-weight:600}
+.dashboard .wsh-source{color:#16757c;font-size:11px}
+.dashboard .impact-band-note{color:#667987;font-size:11px}
+
+@media(max-width:1100px){
+  .dashboard{grid-template-columns:minmax(250px,30%) minmax(0,1fr);height:auto;min-height:0;overflow:visible}
+  .dashboard .results-panel{grid-column:1/-1}
+  .dashboard .map-panel{min-height:65vh}
+}
+@media(max-width:700px){
+  body>.topbar{height:60px;padding:0 14px}
+  .dashboard{display:flex;flex-direction:column;gap:10px;padding:10px}
+  .dashboard>.panel{max-height:none}
+  .dashboard .controls-panel{order:1}
+  .dashboard .map-panel{order:2;min-height:55vh}
+  .dashboard .results-panel{order:3}
+  .dashboard .gantt-canvas{min-height:280px}
+  .dashboard .compact-toolbar{position:static}
+}

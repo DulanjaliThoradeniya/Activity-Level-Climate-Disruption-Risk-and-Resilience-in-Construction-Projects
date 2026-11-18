@@ -1,0 +1,3 @@
+id,name,stage,durationDays,predecessors,dependencies,exposure,heatSensitivity,rainSensitivity
+"A1","Site survey","Preliminaries","3","","","outdoor","medium","low"
+"A2","Excavate","Groundworks","5","A1","[{""predecessorId"":""A1"",""type"":""FS"",""lag"":0}]","outdoor","high","high"
