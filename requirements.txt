@@ -1,8 +1,9 @@
-pandas
+pandas<3
 prophet
+cmdstanpy==1.0.8
 matplotlib
 scikit-learn
-numpy
+numpy>=1.26,<2
 xgboost
 lightgbm
 torch

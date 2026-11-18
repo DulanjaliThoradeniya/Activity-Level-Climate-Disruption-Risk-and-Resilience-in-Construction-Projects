@@ -60,22 +60,22 @@ The snapshot contains the saved forecasts; rebuilding it does not train models o
 
 ### Generate a Prophet forecast locally
 
-Install the dependencies once:
+Use Python 3.12, as in the GitHub Actions workflows, and install the dependencies once. The existing holidays pin selects Prophet 1.1.3, which requires NumPy 1.x; pandas and CmdStanPy are also constrained for compatibility with its forecast builder and bundled Stan backend:
 
 ```powershell
-py -m pip install -r requirements.txt
+py -3.12 -m pip install -r requirements.txt
 ```
 
 Generate one forecast:
 
 ```powershell
-py "Climate Model/Trained model/prophet_forecast.py" --location "Changi" --target rainfall --years 5 --forecast-days 14
+py -3.12 "Climate Model/Trained model/prophet_forecast.py" --location "Changi" --target rainfall --years 5 --forecast-days 14
 ```
 
 Generate the published static forecast bundle:
 
 ```powershell
-py "Climate Model/Trained model/build_prophet_forecasts.py"
+py -3.12 "Climate Model/Trained model/build_prophet_forecasts.py"
 ```
 
 ## Climate Forecast Data and Caching
