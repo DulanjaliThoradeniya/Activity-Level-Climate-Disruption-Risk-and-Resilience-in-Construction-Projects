@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -34,17 +37,12 @@ jobs:
         run: python "Climate Model/Trained model/build_prophet_forecasts.py"
       - name: Refresh 14-day rainfall forecasts for all five models
         # Stations missing yesterday's reading keep their previous forecast and are reported.
-        run: python refresh_station_forecasts.py --through "$(TZ=Asia/Singapore date -d yesterday +%F)" --target rainfall || echo "Some stations were not refreshed; see log above."      - name: Publish the refreshed static data
+        run: python refresh_station_forecasts.py --through "$(TZ=Asia/Singapore date -d yesterday +%F)" --target rainfall || echo "Some stations were not refreshed; see log above."
+      - name: Publish the refreshed static data
         run: |
-          if [ -z "$(git status --porcelain -- data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json)" ]; then
-            echo "The bundled NEA history and Prophet forecasts are already current."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json
-            git commit -m "Update bundled NEA climate forecasts"
-            git push
-          fi
+          bash .github/scripts/publish-climate-data.sh \
+            "Update bundled NEA climate forecasts" \
+            data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

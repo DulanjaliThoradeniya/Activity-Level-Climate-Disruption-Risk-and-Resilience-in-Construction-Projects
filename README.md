@@ -91,6 +91,7 @@ py "Climate Model/Trained model/build_prophet_forecasts.py"
 - Generated forecast output can be cached locally for 24 hours in `.forecast-api-cache/`.
 - Detailed local HTML forecasts and charts are written to `forecast-results/`.
 - Runtime caches and generated reports are excluded from source control.
+- The history and forecast update workflows share the Pages concurrency group. Before publishing generated data, they fetch and rebase onto the latest `main`, retry a concurrent push up to three times, and stop if the same generated file changed remotely or a rebase conflicts. Rerun after reviewing the newer changes.
 
 ## Folder map
 
