@@ -19,6 +19,9 @@ from model_validation import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from climate_history_validation import load_history
+
 HISTORY_PATH = PROJECT_ROOT / "data" / "climate-history.json"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "climate-multi-model-forecasts.json"
 TARGET_INDEXES = {
@@ -159,8 +162,7 @@ def predict_target(records, target, estimated_dates=()):
 
 
 def build():
-    with HISTORY_PATH.open("r", encoding="utf-8") as history_file:
-        history = json.load(history_file)
+    history = load_history(HISTORY_PATH)
 
     if OUTPUT_PATH.exists():
         payload = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
@@ -181,12 +183,19 @@ def build():
     station_names = history.get("stationNames", history.get("station_names", {}))
     for station_code, records in station_records.items():
         targets = {}
-        for target, _ in TARGET_INDEXES.items():
+        for target, target_index in TARGET_INDEXES.items():
             estimated_dates = [
                 observed_date
                 for observed_date, fields in history.get("estimatedValues", {}).get(station_code, {}).items()
                 if target in fields
             ]
+            _, eligible_values = filter_observations(
+                [row[0] for row in records],
+                [row[target_index] for row in records],
+                estimated_dates,
+            )
+            if len(eligible_values) < 180:
+                continue
             result = predict_target(records, target, estimated_dates)
             if result:
                 targets[target] = result
@@ -206,6 +215,8 @@ def build():
                 station_code, {"station_name": station_names.get(station_code, station_code), "targets": {}}
             )
             station["targets"].update(targets)
+    if errors:
+        raise RuntimeError(f"XGBoost failed for {len(errors)} eligible station targets; previous forecasts were preserved.")
     payload["validationBaselineCaptured"] = bool(
         payload.get("validationHistory", {}).get("published-baseline")
     )
@@ -217,7 +228,7 @@ def build():
         "errors": errors,
     }
     temporary_path = OUTPUT_PATH.with_suffix(".json.tmp")
-    temporary_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     temporary_path.replace(OUTPUT_PATH)
     return payload
 

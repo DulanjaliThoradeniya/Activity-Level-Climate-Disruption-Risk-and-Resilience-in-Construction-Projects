@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   update-history:
+    if: github.ref == 'refs/heads/main'
     timeout-minutes: 90
     runs-on: ubuntu-latest
     steps:
@@ -31,21 +32,21 @@ jobs:
           cache-dependency-path: requirements.txt
       - name: Install forecasting dependencies
         run: python -m pip install -r requirements.txt
-      - name: Download and bundle the latest NEA records
-        run: python update_climate_data.py --refresh-recent
-      - name: Generate Prophet forecasts from the refreshed NEA history
-        run: python "Climate Model/Trained model/build_prophet_forecasts.py"
-      - name: Refresh 14-day rainfall forecasts for all five models
-        # Stations missing yesterday's reading keep their previous forecast and are reported.
-        run: python refresh_station_forecasts.py --through "$(TZ=Asia/Singapore date -d yesterday +%F)" --target rainfall || echo "Some stations were not refreshed; see log above."
+      - name: Build and validate an isolated climate release
+        id: climate
+        run: bash .github/scripts/prepare-climate-release.sh refresh
       - name: Publish the refreshed static data
         run: |
+          cp "${{ steps.climate.outputs.directory }}/data/climate-history.json" data/climate-history.json
+          cp "${{ steps.climate.outputs.directory }}/data/climate-forecasts.json" data/climate-forecasts.json
+          cp "${{ steps.climate.outputs.directory }}/data/climate-multi-model-forecasts.json" data/climate-multi-model-forecasts.json
+          cp "${{ steps.climate.outputs.directory }}/data/climate-offline.js" data/climate-offline.js
           bash .github/scripts/publish-climate-data.sh \
             "Update bundled NEA climate forecasts" \
-            data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json
+            data/climate-history.json data/climate-forecasts.json data/climate-multi-model-forecasts.json data/climate-offline.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ${{ steps.climate.outputs.directory }}
       - id: deployment
         uses: actions/deploy-pages@v4

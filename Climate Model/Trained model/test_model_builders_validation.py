@@ -103,7 +103,10 @@ class ModelBuilderValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             history_path = Path(directory) / "history.json"
             output_path = Path(directory) / "output.json"
-            history_path.write_text(json.dumps({"stations": {"S1": self.records}}), encoding="utf-8")
+            history_path.write_text(json.dumps({
+                "schemaVersion": 1, "stationNames": {"S1": "Test station"},
+                "stations": {"S1": self.records},
+            }), encoding="utf-8")
             output_path.write_text(
                 json.dumps({"models": {"xgboost": previous_model, "lightgbm": previous_model}}),
                 encoding="utf-8",
@@ -113,19 +116,20 @@ class ModelBuilderValidationTests(unittest.TestCase):
                 patch.object(xgboost_builder, "OUTPUT_PATH", output_path),
                 patch.object(xgboost_builder, "predict_target", return_value=None),
             ):
-                xgboost_builder.build()
+                with self.assertRaisesRegex(RuntimeError, "previous forecasts were preserved"):
+                    xgboost_builder.build()
             with (
                 patch.object(remaining_builder, "HISTORY_PATH", history_path),
                 patch.object(remaining_builder, "OUTPUT_PATH", output_path),
                 patch.object(remaining_builder, "predict_target", return_value={"lightgbm_error": {"error": "failed"}}),
             ):
-                remaining_builder.build(("lightgbm",))
+                with self.assertRaisesRegex(RuntimeError, "previous forecasts were preserved"):
+                    remaining_builder.build(("lightgbm",))
             result = json.loads(output_path.read_text(encoding="utf-8"))
 
         for model in ("xgboost", "lightgbm"):
             self.assertEqual(result["models"][model]["stations"]["S1"]["targets"]["rainfall"], previous_result)
-            self.assertEqual(result["models"][model]["status"], "partial")
-            self.assertTrue(result["models"][model]["errors"])
+            self.assertNotIn("status", result["models"][model])
 
 
 if __name__ == "__main__":

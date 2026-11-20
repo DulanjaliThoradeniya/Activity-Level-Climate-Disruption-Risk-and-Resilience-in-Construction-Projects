@@ -6,12 +6,15 @@ import importlib.util
 import json
 import math
 from pathlib import Path
+import sys
 
 import pandas as pd
 
+from climate_history_validation import load_history
 
 ROOT = Path(__file__).resolve().parent
 MODEL_DIR = ROOT / "Climate Model" / "Trained model"
+sys.path.insert(0, str(MODEL_DIR))
 HISTORY = ROOT / "data" / "climate-history.json"
 OUTPUT = ROOT / "data" / "climate-multi-model-forecasts.json"
 MODELS = ("xgboost", "lightgbm", "lstm", "tft", "neuralprophet_new")
@@ -45,7 +48,7 @@ def main():
     args = parser.parse_args()
     input_end = date.fromisoformat(args.through)
     dates = [(input_end + timedelta(days=offset)).isoformat() for offset in range(1, 15)]
-    history = json.loads(HISTORY.read_text(encoding="utf-8"))
+    history = load_history(HISTORY)
     unknown_stations = set(args.station or ()) - history["stations"].keys()
     if unknown_stations:
         parser.error(f"Unknown station(s): {', '.join(sorted(unknown_stations))}")
@@ -53,6 +56,7 @@ def main():
     xgb = load_module("existing_xgboost_builder", MODEL_DIR / "build_multi_model_forecasts.py")
     remaining = load_module("existing_other_builders", MODEL_DIR / "build_remaining_climate_models.py")
     failures = []
+    updated = False
 
     for station, records in history["stations"].items():
         if args.station and station not in args.station:
@@ -108,14 +112,16 @@ def main():
                 "station_name": history.get("stationNames", {}).get(station, station), "targets": {}
             })["targets"][target] = result
         if updates:
-            bundle["generatedAt"] = datetime.now(timezone.utc).isoformat()
-            bundle["inputProvenance"] = "See each result's input_provenance and estimatedValues in data/climate-history.json. Stations may have different forecast dates."
-            temporary = OUTPUT.with_suffix(".json.tmp")
-            temporary.write_text(json.dumps(bundle, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-            temporary.replace(OUTPUT)
+            updated = True
     if failures:
         print("\nForecasts not refreshed:\n" + "\n".join(failures), flush=True)
         raise SystemExit(1)
+    if updated:
+        bundle["generatedAt"] = datetime.now(timezone.utc).isoformat()
+        bundle["inputProvenance"] = "See each result's input_provenance and estimatedValues in data/climate-history.json. Stations may have different forecast dates."
+        temporary = OUTPUT.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n", encoding="utf-8")
+        temporary.replace(OUTPUT)
     print("All station results are current.", flush=True)
 
 

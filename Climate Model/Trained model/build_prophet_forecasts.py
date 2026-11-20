@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import math
 from pathlib import Path
+import sys
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -13,6 +14,9 @@ from prophet_forecast import TARGETS, load_area_stations, new_prophet_model
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from climate_history_validation import load_history
+
 HISTORY_PATH = ROOT / "data" / "climate-history.json"
 OUTPUT_PATH = ROOT / "data" / "climate-forecasts.json"
 TARGET_COLUMNS = {
@@ -132,9 +136,7 @@ def _forecast_target(records, target_name, generated_at, forecast_start):
 def build_payload(history_path=HISTORY_PATH, output_path=OUTPUT_PATH, station_code=None, target_name=None):
     if target_name is not None and target_name not in TARGETS:
         raise ValueError(f"Unknown forecast variable: {target_name}")
-    history = json.loads(history_path.read_text(encoding="utf-8"))
-    if history.get("schemaVersion") != 1 or not isinstance(history.get("stations"), dict):
-        raise ValueError("The bundled NEA history file has an unsupported format.")
+    history = load_history(history_path)
 
     station_names = {}
     for station in load_area_stations().values():
@@ -143,7 +145,7 @@ def build_payload(history_path=HISTORY_PATH, output_path=OUTPUT_PATH, station_co
         raise ValueError(f"Unknown NEA station code: {station_code}")
 
     generated_at = datetime.now(timezone.utc).isoformat()
-    forecast_start = datetime.now(ZoneInfo("Asia/Singapore")).date() + timedelta(days=1)
+    forecast_start = datetime.now(ZoneInfo("Asia/Singapore")).date()
     stations = {}
     station_codes = [station_code] if station_code else sorted(station_names)
     targets = [target_name] if target_name else list(TARGETS)

@@ -12,6 +12,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from climate_history_validation import load_history
+
 
 ROOT = Path(__file__).resolve().parent
 CACHE_DIR = ROOT / ".climate-cache"
@@ -209,13 +211,21 @@ def load_station(station, months, prior_records, refresh_months):
                 observed = date(int(row["Year"]), int(row["Month"]), int(row["Day"]))
             except (KeyError, TypeError, ValueError):
                 continue
-            by_date[observed.isoformat()] = [
-                observed.isoformat(),
+            day = observed.isoformat()
+            updated = [
+                day,
                 numeric_value(row, TARGET_COLUMNS["rainfall"]),
                 numeric_value(row, TARGET_COLUMNS["mean_temperature"]),
                 numeric_value(row, TARGET_COLUMNS["maximum_temperature"]),
                 numeric_value(row, TARGET_COLUMNS["minimum_temperature"]),
             ]
+            previous = by_date.get(day)
+            if previous:
+                updated = [day] + [
+                    value if value is not None else previous[index]
+                    for index, value in enumerate(updated[1:], 1)
+                ]
+            by_date[day] = updated
 
     records = [by_date[key] for key in sorted(by_date)]
     if len(records) < MINIMUM_RECORDS:
@@ -246,6 +256,22 @@ def preserve_estimated_provenance(previous, payload):
             raise RuntimeError("Estimated input values have no recorded source.")
         payload["estimatedValues"] = retained
         payload["estimatedValuesSource"] = previous["estimatedValuesSource"]
+
+
+def preserve_nearby_provenance(previous, payload):
+    retained = {}
+    for station, days in previous.get("nearbyStationValues", {}).items():
+        old_rows = {row[0]: row for row in previous.get("stations", {}).get(station, [])}
+        new_rows = {row[0]: row for row in payload["stations"].get(station, [])}
+        for day, source in days.items():
+            old, new = old_rows.get(day), new_rows.get(day)
+            if old is not None and new is not None and old[1] is not None and old[1] == new[1]:
+                retained.setdefault(station, {})[day] = source
+    if retained:
+        if not previous.get("nearbyStationValuesSource"):
+            raise RuntimeError("Nearby-station input values have no recorded source.")
+        payload["nearbyStationValues"] = retained
+        payload["nearbyStationValuesSource"] = previous["nearbyStationValuesSource"]
 
 
 def main():
@@ -290,7 +316,7 @@ def main():
     first_kept_date = f"{months[0][0]:04d}-{months[0][1]:02d}-01"
     previous_payload = {}
     if OUTPUT_PATH.exists():
-        previous_payload = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        previous_payload = load_history(OUTPUT_PATH)
     previous_data = {
         station: [row for row in rows if isinstance(row, list) and row and row[0] >= first_kept_date]
         for station, rows in previous_payload.get("stations", {}).items()
@@ -329,12 +355,14 @@ def main():
     if args.refresh_recent:
         refresh_recent_observations(payload)
     preserve_estimated_provenance(previous_payload, payload)
+    preserve_nearby_provenance(previous_payload, payload)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = OUTPUT_PATH.with_suffix(".json.tmp")
     temporary_path.write_text(
         json.dumps(payload, separators=(",", ":"), ensure_ascii=True),
         encoding="utf-8",
     )
+    load_history(temporary_path, station_names, minimum_rainfall=180)
     temporary_path.replace(OUTPUT_PATH)
 
     requested_cache_files = {
