@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     timeout-minutes: 90
     environment:
       name: github-pages
@@ -31,13 +32,12 @@ jobs:
           cache-dependency-path: requirements.txt
       - name: Install forecasting dependencies
         run: python -m pip install -r requirements.txt
-      - name: Generate Prophet forecasts from the latest bundled NEA history
-        run: python "Climate Model/Trained model/build_prophet_forecasts.py"
-      - name: Generate XGBoost forecasts
-        run: python "Climate Model/Trained model/build_multi_model_forecasts.py"
+      - name: Build and validate an isolated climate release
+        id: climate
+        run: bash .github/scripts/prepare-climate-release.sh bundled
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ${{ steps.climate.outputs.directory }}
       - id: deployment
         uses: actions/deploy-pages@v4

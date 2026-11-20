@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from bisect import bisect_left, bisect_right
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -27,6 +28,9 @@ from xgboost import XGBClassifier, XGBRegressor
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from climate_history_validation import load_history
+
 HISTORY_PATH = PROJECT_ROOT / "data" / "climate-history.json"
 FORECAST_PATH = PROJECT_ROOT / "data" / "climate-forecasts.json"
 HORIZON_DAYS = 14
@@ -1801,7 +1805,7 @@ def build_forecast_payload(
     history_path: Path = HISTORY_PATH,
     station_code: str | None = None,
 ) -> dict[str, Any]:
-    payload = json.loads(history_path.read_text(encoding="utf-8"))
+    payload = load_history(history_path)
     generated_at = datetime.now(timezone.utc).isoformat()
     station_codes = [station_code] if station_code else sorted(payload["stations"])
     stations = {}

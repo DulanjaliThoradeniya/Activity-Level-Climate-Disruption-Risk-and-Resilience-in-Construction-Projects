@@ -78,6 +78,10 @@ Generate the published static forecast bundle:
 py -3.12 "Climate Model/Trained model/build_prophet_forecasts.py"
 ```
 
+The static Prophet forecast starts on the current Singapore calendar day. Before publication,
+`py -3.12 climate_history_validation.py` validates the station history and
+`py -3.12 validate_climate_release.py` checks the complete 14-day release.
+
 ## Climate Forecast Data and Caching
 
 - NEA observations are bundled in `data/climate-history.json`.
@@ -85,6 +89,7 @@ py -3.12 "Climate Model/Trained model/build_prophet_forecasts.py"
 - Historical station CSV downloads start in 2010 by default (`--start-year`, default 2010) and run up to the last completed month; the latest days are added from the NEA real-time APIs, with monthly files cached in `.climate-cache/`.
 - `--refresh-recent` also retrieves paginated NEA rainfall and temperature observations from data.gov.sg. It uses only complete station-days, preserves existing daily values, and stops on retrieval errors or persistent rate limits; partial days are not treated as complete observations. It preserves the provenance of any retained estimates.
 - Where station observations are unavailable, the history bundle may include gridded estimates from the Open-Meteo Historical Forecast API. These are past forecasts, not observations; `estimatedValues` identifies affected stations, dates, and variables, while `estimatedValuesSource` records provenance. Check those fields before treating a value as observed data.
+- Missing rainfall records may also use readings from nearby stations. `nearbyStationValues` and `nearbyStationValuesSource` identify those substitutions; they are not observations at the selected station. Retained substitutions keep their provenance when history is refreshed.
 - Saved forecasts are refreshed incrementally and can have different dates and variable coverage. Updating input history alone does not regenerate saved results. Run `py refresh_station_forecasts.py --help` for the supported date, station, and target options. A missing temperature input does not prevent rainfall from being refreshed.
 - The multi-model bundle records validation and input-period metadata by station, model, and target. Forecast periods and availability can differ; check the saved metadata and do not assume every station or variable is current. Temperature results may be stale or unavailable.
 - When S29 has no current rainfall forecast, the climate report and assessment use S94 (Pasir Ris Street 51) only if its saved rainfall forecast covers the complete current 14-day window. The proxy is labelled, and no temperature data are substituted. The nearest comparison uses the coordinates for S29 in [NEA rainfall metadata on 3 August 2025](https://api.data.gov.sg/v1/environment/rainfall?date=2025-08-03) (1.387, 103.935) and S94 in [NEA metadata on 10 November 2026](https://api.data.gov.sg/v1/environment/rainfall?date=2026-11-10) (1.3679, 103.9489); S94 was the nearest in the latter station list, approximately 2.63 km away. Locations and availability may change, and the historical S29 archive calls the station Pasir Ris (West). S25 is not substituted because its historical station coordinates have not been independently verified.
@@ -92,6 +97,7 @@ py -3.12 "Climate Model/Trained model/build_prophet_forecasts.py"
 - Detailed local HTML forecasts and charts are written to `forecast-results/`.
 - Runtime caches and generated reports are excluded from source control.
 - The history and forecast update workflows share the Pages concurrency group. Before publishing generated data, they fetch and rebase onto the latest `main`, retry a concurrent push up to three times, and stop if the same generated file changed remotely or a rebase conflicts. Rerun after reviewing the newer changes.
+- The `Validate climate release without publishing` workflow runs on pull requests or manual dispatch without Pages permissions. Production workflows build in a separate temporary directory and publish only after history and all required forecast outputs pass validation. A missing observation or stale forecast can therefore block publication instead of replacing the previous Pages release.
 
 ## Folder map
 

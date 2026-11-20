@@ -5,7 +5,7 @@ from datetime import date
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
-from update_climate_data import complete_station_readings, fetch_daily_readings, preserve_estimated_provenance, refresh_recent_observation_day
+from update_climate_data import complete_station_readings, fetch_daily_readings, preserve_estimated_provenance, preserve_nearby_provenance, refresh_recent_observation_day
 
 
 class ClimateRetrievalTests(unittest.TestCase):
@@ -56,6 +56,16 @@ class ClimateRetrievalTests(unittest.TestCase):
         preserve_estimated_provenance(previous, payload)
         self.assertEqual(payload["estimatedValues"], {"S111": {"2026-11-02": ["mean_temperature"]}})
         self.assertEqual(payload["estimatedValuesSource"]["name"], "Open-Meteo")
+
+    def test_preserves_nearby_source_only_for_retained_values(self):
+        previous = {
+            "stations": {"S1": [["2026-11-18", 1.0, None, None, None], ["2026-11-19", 2.0, None, None, None]]},
+            "nearbyStationValues": {"S1": {"2026-11-18": {"station": "S2"}, "2026-11-19": {"station": "S2"}}},
+            "nearbyStationValuesSource": {"name": "NEA"},
+        }
+        payload = {"stations": {"S1": [["2026-11-18", 1.0, None, None, None], ["2026-11-19", 3.0, None, None, None]]}}
+        preserve_nearby_provenance(previous, payload)
+        self.assertEqual(payload["nearbyStationValues"], {"S1": {"2026-11-18": {"station": "S2"}}})
 
 
 if __name__ == "__main__":

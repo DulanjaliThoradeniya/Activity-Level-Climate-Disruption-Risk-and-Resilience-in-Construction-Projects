@@ -20,6 +20,9 @@ from model_validation import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from climate_history_validation import load_history
+
 HISTORY_PATH = PROJECT_ROOT / "data" / "climate-history.json"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "climate-multi-model-forecasts.json"
 FORECAST_DAYS = FORECAST_HORIZON_DAYS
@@ -381,7 +384,7 @@ def predict_target(
 
 
 def build(model_ids=("lightgbm", "lstm", "tft", "neuralprophet_new")):
-    history = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+    history = load_history(HISTORY_PATH)
     if OUTPUT_PATH.exists():
         payload = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
         payload.setdefault("models", {})
@@ -411,6 +414,14 @@ def build(model_ids=("lightgbm", "lstm", "tft", "neuralprophet_new")):
                 for observed_date, fields in history.get("estimatedValues", {}).get(station_code, {}).items()
                 if target in fields
             ]
+            observed = frame.dropna(subset=[target])
+            _, eligible_values = filter_observations(
+                observed["date"].tolist(),
+                observed[target].tolist(),
+                estimated_dates,
+            )
+            if len(eligible_values) < 180:
+                continue
             results = predict_target(
                 records,
                 target,
@@ -437,10 +448,13 @@ def build(model_ids=("lightgbm", "lstm", "tft", "neuralprophet_new")):
                 payload["models"][model_id]["stations"].setdefault(station_code, {
                     "station_name": station_names.get(station_code, station_code), "targets": {}
                 })["targets"][target] = result
+    errors = [error for model_id in model_ids for error in payload["models"][model_id]["errors"]]
+    if errors:
+        raise RuntimeError(f"Forecasting failed for {len(errors)} eligible model targets; previous forecasts were preserved.")
     payload["generatedAt"] = datetime.now(timezone.utc).isoformat()
     record_validation_version(payload, payload["models"])
     temporary_path = OUTPUT_PATH.with_suffix(".json.tmp")
-    temporary_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     temporary_path.replace(OUTPUT_PATH)
 
 
