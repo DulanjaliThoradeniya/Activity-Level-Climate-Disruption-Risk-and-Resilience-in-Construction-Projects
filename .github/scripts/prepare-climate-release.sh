@@ -19,7 +19,11 @@ fi
 python "Climate Model/Trained model/build_prophet_forecasts.py"
 python "Climate Model/Trained model/build_multi_model_forecasts.py"
 python "Climate Model/Trained model/build_remaining_climate_models.py"
-python validate_climate_release.py
+if [ "$mode" = refresh ]; then
+  python validate_climate_release.py --require-current
+else
+  python validate_climate_release.py
+fi
 python build_climate_offline_bundle.py
 test -s index.html
 echo "directory=$stage" >> "${GITHUB_OUTPUT:?}"

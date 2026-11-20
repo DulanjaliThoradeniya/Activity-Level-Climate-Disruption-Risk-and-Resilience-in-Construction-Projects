@@ -33,7 +33,8 @@ def validate_forecast(result, expected_dates, description, expected_end):
             raise ValueError(f"{description}: invalid interval on {row['date']}")
 
 
-def validate_release(root=ROOT, today=None):
+def validate_release(root=ROOT, today=None, require_current=False):
+    rainfall_ends = []
     required = {station["code"] for station in parse_station_mapping().values()}
     required.update(RAINFALL_PROXY_STATIONS)
     history = load_history(root / "data" / "climate-history.json", required, minimum_rainfall=180)
@@ -68,18 +69,26 @@ def validate_release(root=ROOT, today=None):
                 raise ValueError(f"prophet/{station}/{target}: station is missing")
             if len(non_estimated) >= 180:
                 expected_end = non_estimated[-1][0]
-                # Rainfall must be current. Temperature may lag when NEA has not yet published
-                # verified observations; it then starts the day after the last verified value
-                # (the site labels such forecasts as starting before today).
-                model_dates = dates if target == "rainfall" else [
+                if target == "rainfall":
+                    rainfall_ends.append(expected_end)
+                # Each forecast starts the day after that station's latest NEA observation, so a
+                # station whose reading for yesterday is incomplete keeps a valid forecast instead
+                # of blocking every other station's update (the site labels earlier start dates).
+                model_dates = [
                     (date.fromisoformat(expected_end) + timedelta(days=offset)).isoformat()
                     for offset in range(1, 15)
                 ]
                 for model in MODELS:
                     result = models[model].get("stations", {}).get(station, {}).get("targets", {}).get(target)
                     validate_forecast(result, model_dates, f"{model}/{station}/{target}", expected_end)
-    print(f"Validated 14-day release: {dates[0]} through {dates[-1]}.")
+    yesterday = (today - timedelta(days=1)).isoformat()
+    current = sum(end == yesterday for end in rainfall_ends)
+    if require_current and not current:
+        raise ValueError(f"No station has NEA rainfall for {yesterday}; the daily update did not add new data.")
+    print(f"Validated 14-day release: {dates[0]} through {dates[-1]} "
+          f"({current}/{len(rainfall_ends)} rainfall stations use NEA data through {yesterday}).")
 
 
 if __name__ == "__main__":
-    validate_release()
+    import sys
+    validate_release(require_current="--require-current" in sys.argv[1:])
